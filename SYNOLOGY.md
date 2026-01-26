@@ -39,21 +39,70 @@ wget https://raw.githubusercontent.com/Kiwi41/oneflex-bot/main/docker-compose.gh
 
 ```bash
 cat > config/.env << 'EOF'
-# Tokens OneFlex
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# AUTHENTIFICATION ONEFLEX
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+# Tokens SSO (recommandé - voir GET_TOKEN.md)
 ONEFLEX_TOKEN=votre_token_ici
 ONEFLEX_REFRESH_TOKEN=votre_refresh_token_ici
 
-# Configuration
+# Alternative : authentification classique (ne fonctionne pas avec SSO)
+# ONEFLEX_EMAIL=votre.email@example.com
+# ONEFLEX_PASSWORD=votre_mot_de_passe
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# CONFIGURATION RÉSERVATION
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+# Heure de réservation quotidienne (format HH:MM)
 RESERVATION_TIME=03:05
+
+# Nombre de jours à l'avance pour réserver
 RESERVATION_DAYS_AHEAD=7
+
+# Jours de la semaine (1=Lun, 2=Mar, 3=Mer, 4=Jeu, 5=Ven, 6=Sam, 7=Dim)
 RESERVATION_DAYS_OF_WEEK=1,2,3,4,5
 
-# Récurrent (0 = désactivé)
+# Mode récurrent : nombre de semaines à réserver (0 = désactivé)
 RECURRING_WEEKS=4
 
-# Vacances (optionnel)
+# IDs optionnels (laissez vide pour utiliser les favoris automatiquement)
+# ONEFLEX_SITE_ID=
+# ONEFLEX_FLOOR_ID=
+# ONEFLEX_ZONE_ID=
+# ONEFLEX_DESK_ID=
+# ONEFLEX_SPACE_ID=
+# ONEFLEX_DESK_NAME=
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# VACANCES / ABSENCES
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+# Périodes de vacances (format: DATE:DATE,DATE:DATE ou DATE pour 1 jour)
+# Exemple: VACATION_DATES=2026-02-10:2026-02-14,2026-03-01:2026-03-07
 VACATION_DATES=
+
+# Annuler automatiquement les réservations existantes pendant les vacances
 AUTO_CANCEL_VACATIONS=true
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# NOTIFICATIONS (optionnel)
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+# Webhook Discord/Slack (recommandé pour alertes temps réel)
+# NOTIFICATION_WEBHOOK_URL=https://discord.com/api/webhooks/...
+
+# Email (optionnel)
+# NOTIFICATION_EMAIL_ENABLED=false
+# NOTIFICATION_EMAIL_TO=votre.email@example.com
+# SMTP_HOST=smtp.gmail.com
+# SMTP_PORT=587
+# SMTP_USER=votre.email@gmail.com
+# SMTP_PASSWORD=votre_mot_de_passe_app
+
+# Alternative Docker secrets pour SMTP (recommandé sur Synology)
+# SMTP_PASSWORD_FILE=/run/secrets/smtp_password
 EOF
 ```
 
