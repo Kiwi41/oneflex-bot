@@ -61,6 +61,8 @@ RESERVATION_DAYS_AHEAD=7
 - **ONEFLEX_REFRESH_TOKEN** : Token de rafraîchissement (durée longue) - **Recommandé**
 - **RESERVATION_TIME** : Heure de la réservation automatique quotidienne (format HH:MM)
 - **RESERVATION_DAYS_AHEAD** : Nombre de jours à l'avance pour réserver (par défaut 7)
+- **RESERVATION_DAYS_OF_WEEK** : Jours de la semaine pour réservation récurrente (ex: `1,3,5` pour Lundi, Mercredi, Vendredi)
+  - `1` = Lundi, `2` = Mardi, `3` = Mercredi, `4` = Jeudi, `5` = Vendredi, `6` = Samedi, `7` = Dimanche
 
 ## 🚀 Utilisation
 
@@ -83,6 +85,30 @@ python main.py --date 2026-03-15
 ```bash
 python main.py --show
 ```
+
+### Réservation récurrente (jours spécifiques)
+
+Réserve automatiquement selon les jours de la semaine configurés dans `RESERVATION_DAYS_OF_WEEK`.
+
+**Configuration dans `.env`** :
+```bash
+# Réserver tous les Lundis, Mercredis et Vendredis
+RESERVATION_DAYS_OF_WEEK=1,3,5
+```
+
+**Exécution** :
+```bash
+# Réserver pour 4 semaines (défaut)
+python main.py --recurring
+
+# Réserver pour 8 semaines
+python main.py --recurring 8
+```
+
+Exemples de configurations :
+- `1,3,5` : Lundi, Mercredi, Vendredi
+- `2,4` : Mardi, Jeudi
+- `1,2,3,4,5` : Tous les jours de la semaine
 
 ### Mode automatique quotidien
 
