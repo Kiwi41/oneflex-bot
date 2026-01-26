@@ -118,10 +118,16 @@ class OneFlexClient:
             
             logger.error(f"❌ Échec du rafraîchissement: {response.status_code}")
             logger.error(f"Response: {response.text[:500]}")
+            
+            # Alerter si le refresh token ne fonctionne plus
+            error_msg = f"Impossible de rafraîchir le token (HTTP {response.status_code})"
+            notification_service.send_token_expired_alert(error_msg)
+            
             return False
             
         except requests.exceptions.RequestException as e:
             logger.error(f"❌ Erreur lors du rafraîchissement: {e}")
+            notification_service.send_token_expired_alert(str(e))
             return False
     
     def _update_env_token(self, new_token: str):

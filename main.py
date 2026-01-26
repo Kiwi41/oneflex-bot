@@ -187,6 +187,10 @@ class OneFlexBot:
         logger.info(f"  • Déjà réservé/Échecs: {stats['already_booked']}")
         logger.info(f"  • Total tenté: {len(dates_to_book)}")
         
+        # Envoyer notification de succès
+        if stats['success'] > 0:
+            notification_service.send_booking_success(stats['success'], weeks_ahead)
+        
         return stats
     
     def show_my_bookings(self):
