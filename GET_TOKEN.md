@@ -1,0 +1,42 @@
+# Comment récupérer vos tokens OneFlex (SSO)
+
+Puisque OneFlex utilise SSO, vous devez récupérer vos tokens d'authentification manuellement.
+
+## 🔑 Tokens nécessaires
+
+1. **access_token** : Token d'accès (expire après 15 minutes)
+2. **refresh_token** : Token pour renouveler automatiquement l'access_token (longue durée)
+
+## Méthode : Via les Cookies (Recommandé)
+
+1. **Connectez-vous** sur https://oneflex.myworldline.com
+2. **Ouvrez les outils développeur** : `F12` ou `Ctrl+Shift+I`
+3. **Allez dans l'onglet "Application"** (Chrome/Edge) ou "Storage" (Firefox)
+4. **Dans la section "Cookies"**, sélectionnez `https://oneflex.myworldline.com`
+5. **Cherchez ces deux cookies** :
+   - `access_token` - Copiez sa valeur
+   - `refresh_token` - Copiez sa valeur
+6. **Ajoutez-les dans votre fichier `.env`** :
+
+```bash
+ONEFLEX_TOKEN=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+ONEFLEX_REFRESH_TOKEN=de24ee12d9703f31ccf1...
+```
+
+## ✨ Rafraîchissement automatique
+
+Avec le `refresh_token` configuré, le bot rafraîchira **automatiquement** l'`access_token` quand il expire. Vous n'aurez plus besoin de le mettre à jour manuellement !
+
+Le nouveau token sera automatiquement sauvegardé dans le fichier `.env`.
+
+## Vérification
+
+Pour vérifier que tout fonctionne :
+
+```bash
+python main.py --show
+```
+
+Vous devriez voir :
+- ✅ Token d'authentification fourni
+- 🔄 Refresh token disponible pour renouvellement automatique
