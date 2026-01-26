@@ -2,9 +2,14 @@
 Configuration du bot OneFlex
 """
 import os
+from pathlib import Path
 from dotenv import load_dotenv
 
-load_dotenv()
+# Charger .env depuis config/ ou depuis le répertoire courant
+env_path = Path(__file__).parent / 'config' / '.env'
+if not env_path.exists():
+    env_path = Path('.env')
+load_dotenv(env_path)
 
 
 class Config:
