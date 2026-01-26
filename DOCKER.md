@@ -90,6 +90,21 @@ Voir [.env.example](.env.example) pour la liste complète des variables disponib
 
 ## 🐛 Troubleshooting
 
+### Tester le container sans credentials
+
+Pour vérifier que l'image Docker fonctionne sans configurer vos credentials :
+
+```yaml
+environment:
+  - TZ=Europe/Paris
+  - SKIP_VALIDATION=true
+
+# Commenter ou retirer la commande
+# command: python main.py --schedule
+```
+
+Le container démarrera sans erreur même sans TOKEN configuré.
+
 ### Voir les logs
 
 ```bash

@@ -31,9 +31,14 @@ class Config:
     VACATION_DATES = os.getenv('VACATION_DATES', '')  # Format: 2026-02-10:2026-02-14,2026-03-01:2026-03-07
     AUTO_CANCEL_VACATIONS = os.getenv('AUTO_CANCEL_VACATIONS', 'true').lower() == 'true'
     
+    # Désactiver la validation (utile pour tester le container sans credentials)
+    SKIP_VALIDATION = os.getenv('SKIP_VALIDATION', 'false').lower() == 'true'
+    
     @classmethod
     def validate(cls):
         """Valide que la configuration minimale est présente"""
+        if cls.SKIP_VALIDATION:
+            return True
         if not cls.TOKEN and (not cls.EMAIL or not cls.PASSWORD):
             raise ValueError("TOKEN ou (EMAIL + PASSWORD) sont requis dans le fichier .env")
         return True

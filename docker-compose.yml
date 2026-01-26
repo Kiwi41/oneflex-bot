@@ -12,6 +12,9 @@ services:
       - ./logs:/app/logs
     environment:
       - TZ=Europe/Paris
+      # Décommenter pour tester le container sans credentials
+      # - SKIP_VALIDATION=true
     
     # Mode schedule : le bot tourne en continu et réserve automatiquement chaque jour
+    # Commenter cette ligne si vous ne souhaitez pas démarrer le bot automatiquement
     command: python main.py --schedule

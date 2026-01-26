@@ -346,6 +346,22 @@ Créez une tâche planifiée pour mettre à jour les tokens régulièrement (ex:
 
 ## 🐛 Dépannage
 
+### Tester le container sans credentials
+
+Pour vérifier que l'image Docker fonctionne correctement avant de configurer vos credentials :
+
+**Dans docker-compose.yml :**
+```yaml
+environment:
+  - TZ=Europe/Paris
+  - SKIP_VALIDATION=true  # Ajouter cette ligne
+
+# Commenter la commande pour éviter le démarrage automatique
+# command: python main.py --schedule
+```
+
+Le container démarrera sans erreur même si aucun TOKEN n'est configuré.
+
 ### Le container ne démarre pas
 
 ```bash
