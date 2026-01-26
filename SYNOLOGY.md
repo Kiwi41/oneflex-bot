@@ -47,6 +47,9 @@ ONEFLEX_TOKEN=votre_token_ici
 ONEFLEX_REFRESH_TOKEN=votre_refresh_token_ici
 RESERVATION_TIME=09:00
 RESERVATION_DAYS_AHEAD=7
+
+# Optionnel : pour réservation récurrente (ex: Lundi, Mercredi, Vendredi)
+RESERVATION_DAYS_OF_WEEK=1,3,5
 ```
 
 #### 5. Construire et lancer le container
@@ -246,6 +249,31 @@ docker exec oneflex-bot python main.py --show
 ### Réserver pour une date spécifique
 ```bash
 docker exec oneflex-bot python main.py --date 2026-03-15
+```
+
+### Réservation récurrente (selon RESERVATION_DAYS_OF_WEEK)
+
+Configurez d'abord les jours dans `config/.env` :
+```bash
+# Exemple : tous les Lundis, Mercredis, Vendredis
+RESERVATION_DAYS_OF_WEEK=1,3,5
+```
+
+Puis exécutez :
+```bash
+# Réserver pour 4 semaines (par défaut)
+docker exec oneflex-bot python main.py --recurring
+
+# Réserver pour 8 semaines
+docker exec oneflex-bot python main.py --recurring 8
+```
+
+### Automatiser les réservations récurrentes
+
+Dans le Task Scheduler Synology, créez une tâche hebdomadaire :
+```bash
+# Tous les dimanches à 20h00, réserver pour les 4 prochaines semaines
+docker exec oneflex-bot python main.py --recurring 4
 ```
 
 ## 🔒 Sécurité

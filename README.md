@@ -7,9 +7,11 @@ Bot Python pour automatiser la réservation de places de travail sur OneFlex ave
 - ✅ **Connexion SSO** avec authentification par token
 - ✅ **Rafraîchissement automatique** du token d'accès (plus besoin de le mettre à jour manuellement)
 - ✅ **Réservation automatique** de votre bureau favori
+- ✅ **Réservation récurrente** par jours de semaine (ex: tous les Lundi/Mercredi/Vendredi)
 - ✅ **Planification** des réservations quotidiennes
 - ✅ **Affichage** de vos réservations actuelles
 - ✅ **Réservation pour une date spécifique**
+- ✅ **Support Docker** pour déploiement sur Synology NAS
 
 ## 📦 Installation
 
