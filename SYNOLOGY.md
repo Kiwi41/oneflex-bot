@@ -59,7 +59,7 @@ ONEFLEX_REFRESH_TOKEN=votre_refresh_token_ici
 RESERVATION_TIME=03:05
 
 # Nombre de jours à l'avance pour réserver
-RESERVATION_DAYS_AHEAD=7
+RESERVATION_DAYS_AHEAD=28
 
 # Jours de la semaine (1=Lun, 2=Mar, 3=Mer, 4=Jeu, 5=Ven, 6=Sam, 7=Dim)
 RESERVATION_DAYS_OF_WEEK=1,2,3,4,5

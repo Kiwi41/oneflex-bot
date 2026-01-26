@@ -4,7 +4,7 @@ services:
   oneflex-bot:
     build: .
     container_name: oneflex-bot
-    restart: unless-stopped
+    # restart: unless-stopped
     volumes:
       # Monter le fichier .env depuis le NAS
       - ./config/.env:/app/config/.env:ro
@@ -13,9 +13,10 @@ services:
     environment:
       - TZ=Europe/Paris
       # Décommenter pour tester le container sans credentials
-      # - SKIP_VALIDATION=true
+      - SKIP_VALIDATION=true
     
-    # Mode par défaut : réservation récurrente pour les 5 prochaines semaines
+    # Mode par défaut : réservation récurrente pour les 5 prochaines semaines puis arrêt
+    # Pour exécution quotidienne automatique à RESERVATION_TIME (3h05), utilisez --schedule
     # Alternatives : --schedule (bot continu) ou --date YYYY-MM-DD (réservation unique)
     # Commenter cette ligne si vous ne souhaitez pas démarrer le bot automatiquement
-    command: python main.py --recurring 5
+    command: python main.py --schedule
