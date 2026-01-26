@@ -27,10 +27,13 @@ class Config:
     RESERVATION_DAYS_OF_WEEK = os.getenv('RESERVATION_DAYS_OF_WEEK', '')  # Ex: 1,3,5 pour Lundi, Mercredi, Vendredi
     RECURRING_WEEKS = int(os.getenv('RECURRING_WEEKS', 0))  # Nombre de semaines pour les réservations récurrentes
     
+    # Gestion des vacances/absences
+    VACATION_DATES = os.getenv('VACATION_DATES', '')  # Format: 2026-02-10:2026-02-14,2026-03-01:2026-03-07
+    AUTO_CANCEL_VACATIONS = os.getenv('AUTO_CANCEL_VACATIONS', 'true').lower() == 'true'
+    
     @classmethod
     def validate(cls):
         """Valide que la configuration minimale est présente"""
         if not cls.TOKEN and (not cls.EMAIL or not cls.PASSWORD):
             raise ValueError("TOKEN ou (EMAIL + PASSWORD) sont requis dans le fichier .env")
-        return True
         return True

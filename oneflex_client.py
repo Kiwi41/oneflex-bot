@@ -363,6 +363,35 @@ class OneFlexClient:
         logger.error(f"❌ Échec de la réservation")
         return False
     
+    def cancel_booking(self, affectation_id: str) -> bool:
+        """
+        Annule une réservation existante
+        
+        Args:
+            affectation_id: ID de la réservation à annuler
+            
+        Returns:
+            True si l'annulation a réussi
+        """
+        query = """
+        mutation deleteAffectation($affectationId: String!) {
+            deleteAffectation(affectationId: $affectationId)
+        }
+        """
+        
+        variables = {
+            'affectationId': affectation_id
+        }
+        
+        data = self._graphql_request(query, variables)
+        
+        if data and 'deleteAffectation' in data:
+            logger.info(f"✅ Réservation annulée: {affectation_id}")
+            return True
+        
+        logger.error(f"❌ Échec de l'annulation de la réservation")
+        return False
+    
     def get_my_user_id(self) -> Optional[Dict]:
         """
         Récupère l'ID de l'utilisateur connecté

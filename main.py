@@ -31,6 +31,9 @@ class OneFlexBot:
         else:
             self.client = OneFlexClient(Config.EMAIL, Config.PASSWORD)
         self.is_logged_in = False
+        
+        # Initialiser le gestionnaire de vacances
+        self.vacation_manager = VacationManager(Config.VACATION_DATES)
     
     def connect(self) -> bool:
         """Établit la connexion avec OneFlex"""
@@ -155,6 +158,13 @@ class OneFlexBot:
         # Trier les dates
         dates_to_book.sort()
         
+        # Filtrer les dates de vacances
+        dates_to_book = self.vacation_manager.filter_vacation_dates(dates_to_book)
+        
+        if not dates_to_book:
+            logger.warning("⚠️ Aucune date à réserver (toutes sont en vacances)")
+            return {'success': 0, 'failed': 0, 'already_booked': 0}
+        
         # Réserver chaque date
         stats = {'success': 0, 'failed': 0, 'already_booked': 0}
         
@@ -218,13 +228,59 @@ class OneFlexBot:
             
             logger.info(f"  • {date}{moment_str}: {desk_name}{space_str}")
     
+    def cancel_vacation_bookings(self):
+        """Annule les réservations qui tombent pendant les vacances"""
+        if not self.connect():
+            return
+        
+        logger.info("\n🏖️ Vérification des réservations pendant les vacances...")
+        
+        # Récupérer toutes les réservations
+        bookings = self.client.get_my_bookings(days=90)  # 3 mois à l'avance
+        
+        if not bookings:
+            return
+        
+        # Identifier les réservations à annuler
+        to_cancel = self.vacation_manager.get_vacation_bookings_to_cancel(bookings)
+        
+        if not to_cancel:
+            logger.info("✅ Aucune réservation à annuler pendant les vacances")
+            return
+        
+        logger.info(f"📋 {len(to_cancel)} réservation(s) à annuler:")
+        
+        cancelled_count = 0
+        for booking in to_cancel:
+            date = booking.get('date')
+            moment = booking.get('moment', '')
+            booking_id = booking.get('id')
+            desk = booking.get('desk', {})
+            desk_name = desk.get('name', 'Bureau') if desk else 'Bureau'
+            
+            logger.info(f"   🗑️  {date} ({moment}) - {desk_name}")
+            
+            if booking_id and self.client.cancel_booking(booking_id):
+                cancelled_count += 1
+        
+        logger.info(f"\n✅ {cancelled_count}/{len(to_cancel)} réservation(s) annulée(s)\n")
+    
     def schedule_daily_booking(self):
         """Configure une réservation automatique quotidienne"""
+        # Afficher les périodes de vacances configurées
+        if Config.VACATION_DATES:
+            logger.info(self.vacation_manager.format_vacations_summary())
+        
         if Config.RECURRING_WEEKS > 0:
             logger.info(f"⏰ Réservation récurrente configurée pour {Config.RESERVATION_TIME}")
             logger.info(f"📅 Mode: {Config.RECURRING_WEEKS} semaines à l'avance sur les jours configurés")
             
             def job():
+                # Annuler les réservations pendant les vacances si activé
+                if Config.AUTO_CANCEL_VACATIONS and Config.VACATION_DATES:
+                    self.cancel_vacation_bookings()
+                
+                # Réserver pour les semaines à venir (en excluant les vacances)
                 self.book_recurring_days(weeks_ahead=Config.RECURRING_WEEKS)
                 self.show_my_bookings()
             
