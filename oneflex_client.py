@@ -9,6 +9,13 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Import optionnel pour les notifications (éviter erreur circulaire)
+try:
+    from notifications import NotificationService
+    notification_service = NotificationService()
+except ImportError:
+    notification_service = None
+
 
 class OneFlexClient:
     """Client pour interagir avec l'API OneFlex (GraphQL)"""
@@ -120,14 +127,16 @@ class OneFlexClient:
             logger.error(f"Response: {response.text[:500]}")
             
             # Alerter si le refresh token ne fonctionne plus
-            error_msg = f"Impossible de rafraîchir le token (HTTP {response.status_code})"
-            notification_service.send_token_expired_alert(error_msg)
+            if notification_service:
+                error_msg = f"Impossible de rafraîchir le token (HTTP {response.status_code})"
+                notification_service.send_token_expired_alert(error_msg)
             
             return False
             
         except requests.exceptions.RequestException as e:
             logger.error(f"❌ Erreur lors du rafraîchissement: {e}")
-            notification_service.send_token_expired_alert(str(e))
+            if notification_service:
+                notification_service.send_token_expired_alert(str(e))
             return False
     
     def _update_env_token(self, new_token: str):
@@ -421,16 +430,16 @@ class OneFlexClient:
             }
         return None
     
-    def get_favorite_desk(self) -> Optional[Dict]:
+    def get_favorite_desks(self) -> List[Dict]:
         """
-        Récupère le bureau favori de l'utilisateur ou le dernier bureau réservé
+        Récupère la liste des bureaux favoris de l'utilisateur
         
         Returns:
-            Dict avec les infos du bureau favori (desk_id, space_id, name)
+            Liste des bureaux favoris (desk_id, space_id, name) par ordre de préférence
         """
         user_id = self.get_my_user_id()
         if not user_id:
-            return None
+            return []
         
         # Récupérer les bureaux favoris
         query = """
@@ -441,10 +450,12 @@ class OneFlexClient:
                     id
                     space {
                         id
+                        name
                         __typename
                     }
                     desk {
                         id
+                        name
                         __typename
                     }
                     __typename
@@ -457,39 +468,62 @@ class OneFlexClient:
         variables = {'userId': user_id}
         data = self._graphql_request(query, variables)
         
+        favorite_desks = []
+        
         if data and 'user' in data and 'favoriteSpacesAndDesks' in data['user']:
             favorites = data['user']['favoriteSpacesAndDesks']
-            if favorites:
-                fav = favorites[0]
+            for fav in favorites:
                 if fav.get('desk') and fav.get('space'):
-                    return {
+                    favorite_desks.append({
                         'desk_id': fav['desk']['id'],
                         'space_id': fav['space']['id'],
-                        'name': 'Bureau favori'
-                    }
+                        'name': fav['desk'].get('name', 'Bureau favori')
+                    })
         
-        # Sinon, récupérer le dernier bureau réservé
-        bookings = self.get_my_bookings(days=90)
-        if bookings:
-            # Trouver le bureau le plus réservé
-            desk_count = {}
-            for booking in bookings:
-                if booking.get('desk') and booking.get('space'):
-                    desk_id = booking['desk']['id']
-                    if desk_id not in desk_count:
-                        desk_count[desk_id] = {
-                            'count': 0,
-                            'desk_id': desk_id,
-                            'space_id': booking['space']['id'],
-                            'name': booking['desk'].get('name', 'Bureau')
-                        }
-                    desk_count[desk_id]['count'] += 1
-            
-            if desk_count:
-                # Retourner le bureau le plus réservé
-                most_booked = max(desk_count.values(), key=lambda x: x['count'])
-                logger.info(f"📌 Bureau le plus réservé: {most_booked['name']} ({most_booked['count']} fois)")
-                return most_booked
+        # Si aucun favori explicite, utiliser les bureaux les plus réservés
+        if not favorite_desks:
+            bookings = self.get_my_bookings(days=90)
+            if bookings:
+                desk_count = {}
+                for booking in bookings:
+                    if booking.get('desk') and booking.get('space'):
+                        desk_id = booking['desk']['id']
+                        if desk_id not in desk_count:
+                            desk_count[desk_id] = {
+                                'count': 0,
+                                'desk_id': desk_id,
+                                'space_id': booking['space']['id'],
+                                'name': booking['desk'].get('name', 'Bureau')
+                            }
+                        desk_count[desk_id]['count'] += 1
+                
+                # Trier par nombre de réservations (décroissant)
+                sorted_desks = sorted(desk_count.values(), key=lambda x: x['count'], reverse=True)
+                for desk_info in sorted_desks:
+                    favorite_desks.append({
+                        'desk_id': desk_info['desk_id'],
+                        'space_id': desk_info['space_id'],
+                        'name': desk_info['name']
+                    })
+        
+        return favorite_desks
+    
+    def get_favorite_desk(self) -> Optional[Dict]:
+        """
+        Récupère le bureau favori principal de l'utilisateur
+        
+        Returns:
+            Dict avec les infos du bureau favori (desk_id, space_id, name)
+        """
+        favorites = self.get_favorite_desks()
+        
+        if favorites:
+            desk = favorites[0]
+            if len(favorites) > 1:
+                logger.info(f"📌 Bureau favori principal: {desk['name']} (+{len(favorites)-1} alternative(s))")
+            else:
+                logger.info(f"📌 Bureau favori: {desk['name']}")
+            return desk
         
         return None
     

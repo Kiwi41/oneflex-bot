@@ -70,18 +70,46 @@ class OneFlexBot:
             days = days_ahead if days_ahead else Config.RESERVATION_DAYS_AHEAD
             date = datetime.now() + timedelta(days=days)
         
-        # Si pas d'ID spécifié, utiliser le bureau favori
+        # Si pas d'ID spécifié, utiliser le bureau favori avec fallback
         if not desk_id or not space_id:
-            logger.info("🔍 Recherche de votre bureau favori...")
-            favorite = self.client.get_favorite_desk()
+            logger.info("🔍 Recherche de vos bureaux favoris...")
+            favorite_desks = self.client.get_favorite_desks()
             
-            if not favorite:
+            if not favorite_desks:
                 logger.error("❌ Impossible de trouver un bureau favori")
                 return False
             
-            desk_id = favorite['desk_id']
-            space_id = favorite['space_id']
-            desk_name = favorite['name']
+            # Essayer chaque bureau dans l'ordre de préférence
+            for i, desk in enumerate(favorite_desks):
+                desk_id = desk['desk_id']
+                space_id = desk['space_id']
+                desk_name = desk['name']
+                
+                if i == 0:
+                    logger.info(f"🎯 Essai du bureau principal: {desk_name}")
+                else:
+                    logger.info(f"🔄 Essai du bureau alternatif #{i}: {desk_name}")
+                
+                logger.info(f"📅 Date: {date.strftime('%d/%m/%Y')}")
+                
+                # Tenter la réservation
+                success = self.client.book_desk(
+                    desk_id=desk_id,
+                    space_id=space_id,
+                    date=date,
+                    desk_name=desk_name
+                )
+                
+                if success:
+                    return True
+                
+                # Si ce n'est pas le dernier bureau, continuer
+                if i < len(favorite_desks) - 1:
+                    logger.warning(f"⚠️ Bureau occupé, essai du suivant...")
+            
+            # Aucun bureau n'est disponible
+            logger.error(f"❌ Aucun de vos {len(favorite_desks)} bureau(x) favori(s) n'est disponible")
+            return False
         else:
             desk_name = Config.DESK_NAME if hasattr(Config, 'DESK_NAME') else "Bureau"
         
