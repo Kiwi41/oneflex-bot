@@ -102,6 +102,26 @@ Avec le `ONEFLEX_REFRESH_TOKEN` configuré, le bot :
 
 **Vous n'avez plus besoin de mettre à jour manuellement le token !**
 
+## 🐳 Déploiement Docker sur Synology NAS
+
+Le bot peut être déployé sur un NAS Synology avec Docker. Consultez le guide complet : **[SYNOLOGY.md](SYNOLOGY.md)**
+
+### Installation rapide
+
+```bash
+# Cloner le projet sur votre NAS
+git clone https://github.com/Kiwi41/oneflex-bot.git
+cd oneflex-bot
+
+# Créer la configuration
+mkdir -p config
+cp .env.example config/.env
+# Éditer config/.env avec vos tokens
+
+# Lancer avec Docker Compose
+docker-compose up -d
+```
+
 ## 🤖 Automatisation avec Cron
 
 Pour exécuter le bot automatiquement chaque jour :

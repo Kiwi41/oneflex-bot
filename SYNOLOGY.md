@@ -1,0 +1,263 @@
+# Déploiement sur Synology NAS avec Docker
+
+Ce guide explique comment déployer le bot OneFlex sur un NAS Synology en utilisant Docker.
+
+## 📋 Prérequis
+
+1. **Docker** installé sur votre Synology (via le Package Center)
+2. **Accès SSH** au NAS (optionnel mais recommandé)
+3. Un **dossier partagé** pour stocker le projet
+
+## 🚀 Installation
+
+### Méthode 1 : Via SSH (Recommandé)
+
+#### 1. Se connecter au NAS
+
+```bash
+ssh votre_utilisateur@ip_du_nas
+```
+
+#### 2. Cloner le projet
+
+```bash
+cd /volume1/docker  # ou votre dossier docker préféré
+git clone https://github.com/Kiwi41/oneflex-bot.git
+cd oneflex-bot
+```
+
+#### 3. Créer la structure de configuration
+
+```bash
+mkdir -p config
+cp .env.example config/.env
+```
+
+#### 4. Configurer le fichier .env
+
+```bash
+nano config/.env
+# ou
+vim config/.env
+```
+
+Ajoutez vos tokens OneFlex :
+```bash
+ONEFLEX_TOKEN=votre_token_ici
+ONEFLEX_REFRESH_TOKEN=votre_refresh_token_ici
+RESERVATION_TIME=09:00
+RESERVATION_DAYS_AHEAD=7
+```
+
+#### 5. Construire et lancer le container
+
+```bash
+docker-compose build
+docker-compose up -d
+```
+
+### Méthode 2 : Via Synology Docker GUI
+
+#### 1. Télécharger le projet
+
+Téléchargez le projet depuis GitHub et décompressez-le dans un dossier partagé Synology (ex: `/docker/oneflex-bot`)
+
+#### 2. Préparer la configuration
+
+1. Créez un dossier `config` dans `/docker/oneflex-bot`
+2. Copiez `.env.example` vers `config/.env`
+3. Éditez `config/.env` avec vos tokens OneFlex
+
+#### 3. Ouvrir Docker dans DSM
+
+1. Ouvrez **Docker** depuis le menu des applications
+2. Allez dans l'onglet **Image**
+3. Cliquez sur **Ajouter** > **Ajouter depuis un fichier**
+4. Sélectionnez le `Dockerfile` du projet
+5. Nommez l'image `oneflex-bot` et cliquez sur **Construire**
+
+#### 4. Créer le container
+
+1. Une fois l'image construite, allez dans l'onglet **Container**
+2. Cliquez sur **Créer**
+3. Sélectionnez l'image `oneflex-bot`
+4. Configurez le container :
+
+**Paramètres généraux :**
+- Nom : `oneflex-bot`
+- ✅ Activer le redémarrage automatique
+
+**Paramètres de volume :**
+- Dossier local : `/docker/oneflex-bot/config`
+- Point de montage : `/app/config`
+- Mode : Lecture seule
+
+**Variables d'environnement :**
+- `TZ` = `Europe/Paris`
+
+**Commande (optionnelle) :**
+- Par défaut : `python main.py` (exécution unique)
+- Mode continu : `python main.py --schedule`
+
+5. Cliquez sur **Appliquer** puis **Suivant** et **Terminé**
+
+## ⚙️ Modes d'exécution
+
+### Mode 1 : Exécution quotidienne programmée (Recommandé)
+
+Le container s'exécute une fois puis s'arrête. Utilisez le **Task Scheduler** de Synology pour le lancer automatiquement.
+
+**Configuration du container :**
+```yaml
+command: python main.py
+```
+
+**Configuration Task Scheduler :**
+1. Ouvrez **Panneau de configuration** > **Planificateur de tâches**
+2. Créez une nouvelle tâche : **Créer** > **Tâche planifiée** > **Script défini par l'utilisateur**
+3. Configurez :
+   - **Nom** : Réservation OneFlex
+   - **Utilisateur** : root
+   - **Planification** : Quotidienne à 09:00 (ou l'heure souhaitée)
+   - **Script** :
+   ```bash
+   docker start oneflex-bot
+   ```
+
+### Mode 2 : Bot en continu (--schedule)
+
+Le container tourne en permanence et exécute les réservations automatiquement.
+
+**Configuration du container :**
+```yaml
+command: python main.py --schedule
+restart: unless-stopped
+```
+
+Ou en ligne de commande :
+```bash
+docker run -d \
+  --name oneflex-bot \
+  --restart unless-stopped \
+  -v /volume1/docker/oneflex-bot/config/.env:/app/config/.env:ro \
+  -e TZ=Europe/Paris \
+  oneflex-bot \
+  python main.py --schedule
+```
+
+## 📊 Gestion du container
+
+### Voir les logs
+
+Via SSH :
+```bash
+docker logs oneflex-bot
+docker logs -f oneflex-bot  # suivre en temps réel
+```
+
+Via Docker GUI :
+1. Ouvrez **Docker**
+2. Onglet **Container**
+3. Sélectionnez `oneflex-bot`
+4. Cliquez sur **Détails** > **Journal**
+
+### Redémarrer le container
+
+```bash
+docker restart oneflex-bot
+```
+
+### Arrêter le container
+
+```bash
+docker stop oneflex-bot
+```
+
+### Mettre à jour le bot
+
+```bash
+cd /volume1/docker/oneflex-bot
+git pull
+docker-compose build
+docker-compose up -d
+```
+
+## 🔄 Rafraîchissement du token
+
+Le bot rafraîchit automatiquement le token d'accès quand il expire, **mais** le fichier `.env` dans le container est en **lecture seule** pour des raisons de sécurité.
+
+**Solutions :**
+
+### Option A : Token longue durée (Recommandé)
+Le `refresh_token` a une durée de vie longue (plusieurs semaines). Renouvelez-le manuellement quand il expire.
+
+### Option B : Volume en lecture/écriture
+Montez le volume en mode lecture/écriture pour permettre la mise à jour automatique :
+
+```yaml
+volumes:
+  - ./config/.env:/app/config/.env  # sans :ro
+```
+
+### Option C : Renouvellement manuel périodique
+Créez une tâche planifiée pour mettre à jour les tokens régulièrement (ex: tous les 7 jours).
+
+## 🐛 Dépannage
+
+### Le container ne démarre pas
+
+```bash
+docker logs oneflex-bot
+```
+
+Vérifiez :
+- Le fichier `.env` existe dans `config/`
+- Les tokens sont valides
+- Les permissions du dossier sont correctes
+
+### "Token invalide ou expiré"
+
+1. Récupérez un nouveau token depuis OneFlex
+2. Éditez `config/.env` avec le nouveau token
+3. Redémarrez le container :
+   ```bash
+   docker restart oneflex-bot
+   ```
+
+### Le bot ne réserve pas
+
+Vérifiez :
+- Les logs du container : `docker logs oneflex-bot`
+- La configuration de `RESERVATION_DAYS_AHEAD` dans `.env`
+- Que vous n'avez pas déjà une réservation pour cette date
+
+## 📝 Exemples de commandes
+
+### Réserver manuellement pour demain
+```bash
+docker exec oneflex-bot python main.py --date $(date -d "+1 day" +%Y-%m-%d)
+```
+
+### Voir mes réservations
+```bash
+docker exec oneflex-bot python main.py --show
+```
+
+### Réserver pour une date spécifique
+```bash
+docker exec oneflex-bot python main.py --date 2026-03-15
+```
+
+## 🔒 Sécurité
+
+- Le fichier `.env` contenant vos tokens doit être protégé
+- Utilisez les permissions appropriées : `chmod 600 config/.env`
+- Ne commitez **jamais** le fichier `.env` dans git
+- Le `.gitignore` est déjà configuré pour l'ignorer
+
+## 🆘 Support
+
+Pour toute question ou problème :
+1. Consultez les logs : `docker logs oneflex-bot`
+2. Vérifiez le [README.md](README.md) principal
+3. Consultez [GET_TOKEN.md](GET_TOKEN.md) pour les problèmes de tokens

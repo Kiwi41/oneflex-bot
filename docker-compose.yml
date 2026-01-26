@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  oneflex-bot:
+    build: .
+    container_name: oneflex-bot
+    restart: unless-stopped
+    volumes:
+      # Monter le fichier .env depuis le NAS
+      - ./config/.env:/app/config/.env:ro
+      # Optionnel : logs
+      - ./logs:/app/logs
+    environment:
+      - TZ=Europe/Paris
+    # Décommenter pour mode schedule (bot en continu)
+    # command: python main.py --schedule
+    
+    # Pour exécution quotidienne, laisser le container s'arrêter après exécution
+    # et utiliser un cron job ou Task Scheduler Synology
