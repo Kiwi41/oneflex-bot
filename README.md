@@ -8,6 +8,7 @@ Bot Python pour automatiser la réservation de places de travail sur OneFlex ave
 - ✅ **Rafraîchissement automatique** du token d'accès (plus besoin de le mettre à jour manuellement)
 - ✅ **Réservation automatique** de votre bureau favori
 - ✅ **Réservation récurrente** par jours de semaine (ex: tous les Lundi/Mercredi/Vendredi)
+- ✅ **Gestion des vacances** : exclusion et annulation automatique des réservations (voir [VACATIONS.md](VACATIONS.md))
 - ✅ **Planification** des réservations quotidiennes
 - ✅ **Affichage** de vos réservations actuelles
 - ✅ **Réservation pour une date spécifique**
@@ -164,6 +165,24 @@ Avec le `ONEFLEX_REFRESH_TOKEN` configuré, le bot :
 - ✅ Continue l'exécution sans interruption
 
 **Vous n'avez plus besoin de mettre à jour manuellement le token !**
+
+## 🏖️ Gestion des vacances
+
+Le bot peut automatiquement gérer vos périodes de vacances :
+- 🚫 **Exclure** les jours de vacances des réservations récurrentes
+- 🗑️ **Annuler automatiquement** les réservations existantes pendant vos absences
+- ⚠️ **Bloquer** les réservations manuelles sur des dates en vacances
+
+**Configuration dans `.env`** :
+```bash
+# Périodes de vacances (format: YYYY-MM-DD:YYYY-MM-DD)
+VACATION_DATES=2026-02-10:2026-02-14,2026-04-13:2026-04-24
+
+# Annulation automatique des réservations existantes
+AUTO_CANCEL_VACATIONS=true
+```
+
+📖 **Guide complet** : [VACATIONS.md](VACATIONS.md)
 
 ## 🐳 Déploiement Docker sur Synology NAS
 
