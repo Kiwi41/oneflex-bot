@@ -315,6 +315,11 @@ class OneFlexClient:
         Returns:
             bool: True si la réservation est réussie
         """
+        # Vérifier si une réservation existe déjà pour cette date et ce bureau
+        if self.has_booking_for_date(date, desk_id):
+            logger.info(f"✅ Réservation déjà existante pour {desk_name} le {date.strftime('%d/%m/%Y')}")
+            return True
+        
         user_id = self.get_my_user_id()
         if not user_id:
             logger.error("❌ Impossible de récupérer l'ID utilisateur")
@@ -594,5 +599,77 @@ class OneFlexClient:
         
         logger.info("📅 Aucune réservation active")
         return []
+    
+    def has_booking_for_date(self, date: datetime, desk_id: Optional[str] = None) -> bool:
+        """
+        Vérifie si une réservation existe déjà pour une date donnée
+        
+        Args:
+            date: Date à vérifier
+            desk_id: ID du bureau spécifique (optionnel, vérifie n'importe quel bureau si None)
+            
+        Returns:
+            bool: True si une réservation existe déjà
+        """
+        user_id = self.get_my_user_id()
+        if not user_id:
+            return False
+        
+        date_str = date.strftime('%Y-%m-%d')
+        
+        query = """
+        query affectationsByUserAndDates($userId: UserIdType!, $affectationsFilter: GetAffectationsFilter!) {
+            user(idV2: $userId) {
+                id
+                affectations(affectationFilter: $affectationsFilter) {
+                    id
+                    date
+                    active
+                    desk {
+                        id
+                        name
+                        __typename
+                    }
+                    __typename
+                }
+                __typename
+            }
+        }
+        """
+        
+        variables = {
+            'userId': user_id,
+            'affectationsFilter': {
+                'dates': [date_str],
+                'withAuthoredSuggestions': True
+            }
+        }
+        
+        data = self._graphql_request(query, variables)
+        
+        if data and 'user' in data and 'affectations' in data['user']:
+            affectations = data['user']['affectations']
+            
+            # Filtrer uniquement les réservations actives
+            active_bookings = [a for a in affectations if a.get('active', False)]
+            
+            if not active_bookings:
+                return False
+            
+            # Si desk_id spécifié, vérifier si c'est le même bureau
+            if desk_id:
+                for booking in active_bookings:
+                    if booking.get('desk', {}).get('id') == desk_id:
+                        desk_name = booking.get('desk', {}).get('name', 'Bureau')
+                        logger.info(f"ℹ️ Réservation déjà existante pour {desk_name} le {date_str}")
+                        return True
+                return False
+            else:
+                # Sinon, juste vérifier qu'il y a au moins une réservation
+                desk_name = active_bookings[0].get('desk', {}).get('name', 'Bureau')
+                logger.info(f"ℹ️ Réservation déjà existante pour {desk_name} le {date_str}")
+                return True
+        
+        return False
     
 
