@@ -46,7 +46,11 @@ AUTO_CANCEL_VACATIONS=false
 
 ### 1. Exclusion des réservations
 
-Lors de la réservation récurrente, le bot **n'inclura PAS** les jours de vacances :
+Le bot **n'inclura PAS** les jours de vacances dans plusieurs modes :
+
+#### Mode récurrent (`--recurring`)
+
+Lors de la réservation récurrente, les jours de vacances sont automatiquement exclus :
 
 ```bash
 python main.py --recurring 4
@@ -62,9 +66,51 @@ Exemple de sortie :
    ⊗ 14/02/2026 - Vacances
 ```
 
+#### Mode date spécifique (`--date`)
+
+Essayer de réserver une date pendant les vacances est **bloqué** avec un message d'avertissement :
+
+```bash
+python main.py --date 2026-02-10
+```
+
+Sortie :
+```
+⚠️ La date 10/02/2026 est pendant vos vacances configurées.
+💡 Utilisez --force si vous voulez réserver quand même.
+```
+
+Pour forcer quand même :
+```bash
+python main.py --date 2026-02-10 --force
+```
+
 ### 2. Annulation automatique
 
-En mode `--schedule` avec `AUTO_CANCEL_VACATIONS=true`, le bot annule automatiquement les réservations qui tombent pendant vos vacances :
+Avec `AUTO_CANCEL_VACATIONS=true`, le bot annule automatiquement les réservations existantes pendant vos vacances.
+
+#### En mode récurrent (`--recurring`)
+
+Avant de créer les nouvelles réservations, le bot annule automatiquement celles qui tombent pendant les vacances :
+
+```bash
+python main.py --recurring 4
+```
+
+Sortie :
+```
+🏖️ Vérification des réservations pendant les vacances...
+📋 4 réservation(s) à annuler:
+   🗑️  2026-02-10 (MORNING) - Bureau COP-0-05
+   🗑️  2026-02-10 (AFTERNOON) - Bureau COP-0-05
+   🗑️  2026-02-11 (MORNING) - Bureau COP-0-05
+   🗑️  2026-02-11 (AFTERNOON) - Bureau COP-0-05
+✅ 4/4 réservation(s) annulée(s)
+```
+
+#### En mode automatique (`--schedule`)
+
+En mode planifié avec `AUTO_CANCEL_VACATIONS=true`, le bot annule automatiquement les réservations qui tombent pendant vos vacances :
 
 ```bash
 python main.py --schedule

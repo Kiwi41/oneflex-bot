@@ -9,6 +9,8 @@ from typing import Optional
 
 from config import Config
 from oneflex_client import OneFlexClient
+from notifications import notification_service
+from vacation_manager import VacationManager
 
 logging.basicConfig(
     level=logging.INFO,
@@ -321,6 +323,10 @@ def main():
     
     # Réservation récurrente selon les jours de semaine configurés
     elif len(sys.argv) == 2 and sys.argv[1] == '--recurring':
+        # Annuler les réservations pendant les vacances si activé
+        if Config.AUTO_CANCEL_VACATIONS and Config.VACATION_DATES:
+            bot.cancel_vacation_bookings()
+        
         bot.book_recurring_days()
         bot.show_my_bookings()
     
@@ -328,6 +334,11 @@ def main():
     elif len(sys.argv) == 3 and sys.argv[1] == '--recurring':
         try:
             weeks = int(sys.argv[2])
+            
+            # Annuler les réservations pendant les vacances si activé
+            if Config.AUTO_CANCEL_VACATIONS and Config.VACATION_DATES:
+                bot.cancel_vacation_bookings()
+            
             bot.book_recurring_days(weeks_ahead=weeks)
             bot.show_my_bookings()
         except ValueError:
@@ -336,7 +347,23 @@ def main():
     # Réserver pour une date spécifique (YYYY-MM-DD)
     elif len(sys.argv) == 3 and sys.argv[1] == '--date':
         try:
-            date = datetime.strptime(sys.argv[2], '%Y-%m-%d')
+            date = datetime.strptime(sys.argv[2], '%Y-%m-%d').date()
+            # Vérifier si la date est pendant les vacances
+            if Config.VACATION_DATES and bot.vacation_manager.is_vacation_day(date):
+                logger.warning(f"⚠️ La date {date.strftime('%d/%m/%Y')} est pendant vos vacances configurées.")
+                logger.warning("💡 Utilisez --force si vous voulez réserver quand même.")
+                bot.show_my_bookings()
+                return
+            
+            bot.book_next_available(date=date)
+            bot.show_my_bookings()
+        except ValueError:
+            logger.error("❌ Format de date invalide. Utilisez YYYY-MM-DD")
+    
+    # Réservation pour une date spécifique (forcer même pendant vacances)
+    elif len(sys.argv) == 4 and sys.argv[1] == '--date' and sys.argv[3] == '--force':
+        try:
+            date = datetime.strptime(sys.argv[2], '%Y-%m-%d').date()
             bot.book_next_available(date=date)
             bot.show_my_bookings()
         except ValueError:
@@ -348,12 +375,13 @@ def main():
 Usage: python main.py [OPTIONS]
 
 Options:
-  (aucun)              Réserve un bureau selon RESERVATION_DAYS_AHEAD
-  --schedule           Lance le bot en mode automatique quotidien
-  --show               Affiche vos réservations actuelles
-  --date YYYY-MM-DD    Réserve pour une date spécifique
-  --recurring [WEEKS]  Réserve selon les jours configurés dans RESERVATION_DAYS_OF_WEEK
-                       WEEKS: nombre de semaines (défaut: 4)
+  (aucun)                    Réserve un bureau selon RESERVATION_DAYS_AHEAD
+  --schedule                 Lance le bot en mode automatique quotidien
+  --show                     Affiche vos réservations actuelles
+  --date YYYY-MM-DD          Réserve pour une date spécifique (bloqué si vacances)
+  --date YYYY-MM-DD --force  Force la réservation même pendant les vacances
+  --recurring [WEEKS]        Réserve selon les jours configurés dans RESERVATION_DAYS_OF_WEEK
+                             WEEKS: nombre de semaines (défaut: 4)
 
 Exemples:
   python main.py

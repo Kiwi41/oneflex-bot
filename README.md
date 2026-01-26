@@ -95,8 +95,14 @@ python main.py
 ### Réserver pour une date spécifique
 
 ```bash
+# Réserver pour une date (bloquée si vacances configurées)
 python main.py --date 2026-03-15
+
+# Forcer la réservation même pendant les vacances
+python main.py --date 2026-03-15 --force
 ```
+
+**Note** : Si la date est dans une période de vacances configurée (`VACATION_DATES`), la réservation sera bloquée avec un message d'avertissement. Utilisez `--force` pour passer outre.
 
 ### Afficher vos réservations
 

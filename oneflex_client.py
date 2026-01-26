@@ -374,20 +374,25 @@ class OneFlexClient:
             True si l'annulation a réussi
         """
         query = """
-        mutation deleteAffectation($affectationId: String!) {
-            deleteAffectation(affectationId: $affectationId)
+        mutation deleteAffectation($affectationId: ID!, $deleteGuestsOf: Boolean!) {
+            deleteAffectation(affectationId: $affectationId, deleteGuestsOf: $deleteGuestsOf) {
+                success
+            }
         }
         """
         
         variables = {
-            'affectationId': affectation_id
+            'affectationId': affectation_id,
+            'deleteGuestsOf': False
         }
         
         data = self._graphql_request(query, variables)
         
         if data and 'deleteAffectation' in data:
-            logger.info(f"✅ Réservation annulée: {affectation_id}")
-            return True
+            result = data['deleteAffectation']
+            if result.get('success', False):
+                logger.info(f"✅ Réservation annulée: {affectation_id}")
+                return True
         
         logger.error(f"❌ Échec de l'annulation de la réservation")
         return False
@@ -556,23 +561,4 @@ class OneFlexClient:
         logger.info("📅 Aucune réservation active")
         return []
     
-    def cancel_booking(self, booking_id: str) -> bool:
-        """
-        Annule une réservation
-        
-        Args:
-            booking_id: ID de la réservation à annuler
-            
-        Returns:
-            bool: True si l'annulation est réussie
-        """
-        try:
-            response = self.session.delete(f"{self.BASE_URL}/bookings/{booking_id}")
-            response.raise_for_status()
-            
-            logger.info("✅ Réservation annulée")
-            return True
-            
-        except requests.exceptions.RequestException as e:
-            logger.error(f"❌ Erreur lors de l'annulation: {e}")
-            return False
+
