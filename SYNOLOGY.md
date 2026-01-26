@@ -106,13 +106,33 @@ Téléchargez le projet depuis GitHub et décompressez-le dans un dossier partag
 
 ## ⚙️ Modes d'exécution
 
-### Mode 1 : Exécution quotidienne programmée (Recommandé)
+### Mode recommandé : Bot en continu avec --schedule
 
-Le container s'exécute une fois puis s'arrête. Utilisez le **Task Scheduler** de Synology pour le lancer automatiquement.
+Le bot tourne en permanence et réserve automatiquement chaque jour à l'heure configurée (RESERVATION_TIME).
+
+**Avantages :**
+- ✅ Automatique : pas besoin de Task Scheduler
+- ✅ Simple : un seul container qui tourne en continu
+- ✅ Fiable : restart automatique en cas d'erreur
+
+**Configuration :**
+Le [docker-compose.yml](docker-compose.yml) est déjà configuré avec `command: python main.py --schedule`
+
+Le bot :
+1. Vérifie chaque jour à l'heure configurée (ex: 08:00)
+2. Réserve pour J+N jours (selon RESERVATION_DAYS_AHEAD)
+3. Utilise les jours configurés dans RESERVATION_DAYS_OF_WEEK
+4. Redémarre automatiquement en cas d'erreur
+
+### Mode alternatif : Exécution quotidienne avec Task Scheduler
+
+Si vous préférez contrôler l'exécution via Synology Task Scheduler :
 
 **Configuration du container :**
+Modifiez [docker-compose.yml](docker-compose.yml) :
 ```yaml
-command: python main.py
+# Retirer la ligne command pour utiliser le comportement par défaut
+# command: python main.py --schedule
 ```
 
 **Configuration Task Scheduler :**
@@ -127,17 +147,7 @@ command: python main.py
    docker start oneflex-bot
    ```
 
-### Mode 2 : Bot en continu (--schedule)
-
-Le container tourne en permanence et exécute les réservations automatiquement.
-
-**Configuration du container :**
-```yaml
-command: python main.py --schedule
-restart: unless-stopped
-```
-
-Ou en ligne de commande :
+## 📊 Surveillance et logs
 ```bash
 docker run -d \
   --name oneflex-bot \
@@ -148,14 +158,13 @@ docker run -d \
   python main.py --schedule
 ```
 
-## 📊 Gestion du container
+## 📊 Surveillance et logs
 
-### Voir les logs
+### Voir les logs en temps réel
 
 Via SSH :
 ```bash
-docker logs oneflex-bot
-docker logs -f oneflex-bot  # suivre en temps réel
+docker logs -f oneflex-bot
 ```
 
 Via Docker GUI :
@@ -163,6 +172,18 @@ Via Docker GUI :
 2. Onglet **Container**
 3. Sélectionnez `oneflex-bot`
 4. Cliquez sur **Détails** > **Journal**
+
+### Vérifier que le bot tourne
+
+```bash
+docker ps | grep oneflex-bot
+```
+
+Vous devriez voir :
+```
+CONTAINER ID   IMAGE          STATUS                  PORTS     NAMES
+abc123def456   oneflex-bot    Up 2 hours                        oneflex-bot
+```
 
 ### Redémarrer le container
 
@@ -182,6 +203,7 @@ docker stop oneflex-bot
 cd /volume1/docker/oneflex-bot
 git pull
 docker-compose build
+docker-compose down
 docker-compose up -d
 ```
 

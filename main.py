@@ -216,11 +216,18 @@ class OneFlexBot:
     
     def schedule_daily_booking(self):
         """Configure une réservation automatique quotidienne"""
-        logger.info(f"⏰ Réservation automatique configurée pour {Config.RESERVATION_TIME}")
-        
-        schedule.every().day.at(Config.RESERVATION_TIME).do(
-            self.book_next_available
-        )
+        if Config.RECURRING_WEEKS > 0:
+            logger.info(f"⏰ Réservation récurrente configurée pour {Config.RESERVATION_TIME}")
+            logger.info(f"📅 Mode: {Config.RECURRING_WEEKS} semaines à l'avance sur les jours configurés")
+            
+            def job():
+                self.book_recurring_days(weeks_ahead=Config.RECURRING_WEEKS)
+                self.show_my_bookings()
+            
+            schedule.every().day.at(Config.RESERVATION_TIME).do(job)
+        else:
+            logger.info(f"⏰ Réservation automatique configurée pour {Config.RESERVATION_TIME}")
+            schedule.every().day.at(Config.RESERVATION_TIME).do(self.book_next_available)
         
         logger.info("🤖 Bot en attente... (Ctrl+C pour arrêter)")
         

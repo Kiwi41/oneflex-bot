@@ -25,6 +25,7 @@ class Config:
     RESERVATION_TIME = os.getenv('RESERVATION_TIME', '09:00')
     RESERVATION_DAYS_AHEAD = int(os.getenv('RESERVATION_DAYS_AHEAD', 7))
     RESERVATION_DAYS_OF_WEEK = os.getenv('RESERVATION_DAYS_OF_WEEK', '')  # Ex: 1,3,5 pour Lundi, Mercredi, Vendredi
+    RECURRING_WEEKS = int(os.getenv('RECURRING_WEEKS', 0))  # Nombre de semaines pour les réservations récurrentes
     
     @classmethod
     def validate(cls):

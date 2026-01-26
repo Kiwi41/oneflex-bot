@@ -33,9 +33,24 @@ cp .env.example .env
 
 ### 2. Récupérer vos tokens OneFlex
 
-Consultez le guide détaillé dans [GET_TOKEN.md](GET_TOKEN.md) pour récupérer vos tokens.
+#### Méthode automatique (Recommandée)
 
-**En résumé** :
+Utilisez le script automatisé :
+
+```bash
+python auto_get_tokens.py
+```
+
+Le script va :
+- Ouvrir Chrome automatiquement
+- Attendre que vous vous connectiez via SSO
+- Récupérer automatiquement les tokens
+- Mettre à jour votre `.env` directement
+
+#### Méthode manuelle
+
+Consultez le guide détaillé dans [GET_TOKEN.md](GET_TOKEN.md) ou :
+
 1. Connectez-vous sur https://oneflex.myworldline.com
 2. Ouvrez les outils développeur (F12)
 3. Allez dans **Application** > **Cookies** > `https://oneflex.myworldline.com`
@@ -61,10 +76,11 @@ RESERVATION_DAYS_AHEAD=7
 
 - **ONEFLEX_TOKEN** : Token d'accès (expire après 15 minutes)
 - **ONEFLEX_REFRESH_TOKEN** : Token de rafraîchissement (durée longue) - **Recommandé**
-- **RESERVATION_TIME** : Heure de la réservation automatique quotidienne (format HH:MM)
+- **RESERVATION_TIME** : Heure de la réservation automatique quotidienne (format HH:MM, ex: `03:05`)
 - **RESERVATION_DAYS_AHEAD** : Nombre de jours à l'avance pour réserver (par défaut 7)
 - **RESERVATION_DAYS_OF_WEEK** : Jours de la semaine pour réservation récurrente (ex: `1,3,5` pour Lundi, Mercredi, Vendredi)
   - `1` = Lundi, `2` = Mardi, `3` = Mercredi, `4` = Jeudi, `5` = Vendredi, `6` = Samedi, `7` = Dimanche
+- **RECURRING_WEEKS** : Nombre de semaines à réserver à l'avance en mode `--schedule` (0 = désactivé, défaut 0)
 
 ## 🚀 Utilisation
 
@@ -119,6 +135,19 @@ Lance le bot en mode planifié (s'exécute automatiquement chaque jour à l'heur
 ```bash
 python main.py --schedule
 ```
+
+**Mode standard** : Réserve pour J+RESERVATION_DAYS_AHEAD chaque jour
+
+**Mode récurrent** : Si `RECURRING_WEEKS` > 0, réserve automatiquement pour N semaines à l'avance selon les jours configurés dans `RESERVATION_DAYS_OF_WEEK`
+
+**Exemple de configuration pour réservation récurrente** :
+```bash
+RESERVATION_TIME=03:05
+RESERVATION_DAYS_OF_WEEK=1,2,3,4,5  # Lundi à Vendredi
+RECURRING_WEEKS=4  # 4 semaines à l'avance
+```
+
+Avec cette config, le bot va réserver automatiquement les 4 prochaines semaines (20 jours) chaque jour à 3h05.
 
 ## 🔄 Rafraîchissement automatique du token
 

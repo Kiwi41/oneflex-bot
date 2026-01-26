@@ -12,8 +12,6 @@ services:
       - ./logs:/app/logs
     environment:
       - TZ=Europe/Paris
-    # Décommenter pour mode schedule (bot en continu)
-    # command: python main.py --schedule
     
-    # Pour exécution quotidienne, laisser le container s'arrêter après exécution
-    # et utiliser un cron job ou Task Scheduler Synology
+    # Mode schedule : le bot tourne en continu et réserve automatiquement chaque jour
+    command: python main.py --schedule

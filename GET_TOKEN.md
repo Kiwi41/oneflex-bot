@@ -1,13 +1,34 @@
 # Comment récupérer vos tokens OneFlex (SSO)
 
-Puisque OneFlex utilise SSO, vous devez récupérer vos tokens d'authentification manuellement.
+Puisque OneFlex utilise SSO, vous devez récupérer vos tokens d'authentification.
 
 ## 🔑 Tokens nécessaires
 
 1. **access_token** : Token d'accès (expire après 15 minutes)
 2. **refresh_token** : Token pour renouveler automatiquement l'access_token (longue durée)
 
-## Méthode : Via les Cookies (Recommandé)
+## 🤖 Méthode Automatique (Recommandée)
+
+Utilisez le script automatisé qui gère tout pour vous :
+
+```bash
+python auto_get_tokens.py
+```
+
+Le script va :
+1. ✅ Ouvrir Chrome automatiquement
+2. ✅ Attendre que vous vous connectiez via SSO
+3. ✅ Récupérer automatiquement les tokens depuis les cookies
+4. ✅ Mettre à jour votre fichier `.env` directement
+
+**Prérequis** :
+```bash
+pip install selenium
+```
+
+---
+
+## 📋 Méthode Manuelle : Via les Cookies
 
 1. **Connectez-vous** sur https://oneflex.myworldline.com
 2. **Ouvrez les outils développeur** : `F12` ou `Ctrl+Shift+I`
