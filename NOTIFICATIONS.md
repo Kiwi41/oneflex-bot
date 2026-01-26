@@ -170,26 +170,96 @@ Documentation: GET_TOKEN.md
 
 ---
 
-## 🐳 Configuration Docker
+## � Sécurité des mots de passe
 
-Si vous utilisez Docker, assurez-vous que les variables d'environnement sont bien passées :
+**Important** : Le fichier `.env` est déjà dans `.gitignore` et ne sera jamais commité sur Git. Vos mots de passe sont donc protégés.
+
+### Pour plus de sécurité (Production)
+
+#### Option 1 : Variables d'environnement système (Recommandé)
+
+Au lieu de mettre les mots de passe dans `.env`, utilisez les variables d'environnement du système :
+
+```bash
+# Linux/WSL
+export SMTP_PASSWORD="votre_mot_de_passe"
+
+# Ajouter dans ~/.bashrc ou ~/.zshrc pour persistence
+echo 'export SMTP_PASSWORD="votre_mot_de_passe"' >> ~/.bashrc
+```
+
+#### Option 2 : Docker Secrets (Synology NAS)
+
+Utilisez Docker Secrets pour une sécurité maximale :
 
 ```yaml
 # docker-compose.yml
+version: '3.8'
+services:
+  oneflex-bot:
+    secrets:
+      - smtp_password
+    environment:
+      - SMTP_PASSWORD_FILE=/run/secrets/smtp_password
+
+secrets:
+  smtp_password:
+    file: ./secrets/smtp_password.txt
+```
+
+Créez le fichier secret :
+```bash
+mkdir -p secrets
+echo "votre_mot_de_passe" > secrets/smtp_password.txt
+chmod 600 secrets/smtp_password.txt
+# Ajoutez secrets/ dans .gitignore
+```
+
+Modifiez `notifications.py` pour lire le secret :
+```python
+smtp_password = os.getenv('SMTP_PASSWORD')
+if not smtp_password and os.getenv('SMTP_PASSWORD_FILE'):
+    with open(os.getenv('SMTP_PASSWORD_FILE')) as f:
+        smtp_password = f.read().strip()
+```
+
+#### Option 3 : Fichier de configuration séparé
+
+Créez un fichier `.env.secrets` non versionné :
+
+```bash
+# .env.secrets (ajouté dans .gitignore)
+SMTP_PASSWORD=votre_mot_de_passe
+NOTIFICATION_WEBHOOK_URL=https://discord.com/api/webhooks/...
+```
+
+Chargez-le en plus du `.env` principal dans votre code.
+
+## 🐳 Configuration Docker
+
+### Méthode simple (développement)
+
+Montez le fichier `.env` :
+
+```yaml
+volumes:
+  - ./config/.env:/app/config/.env
+```
+
+### Méthode sécurisée (production)
+
+Utilisez des variables d'environnement ou secrets :
+
+```yaml
 services:
   oneflex-bot:
     environment:
       - NOTIFICATION_WEBHOOK_URL=${NOTIFICATION_WEBHOOK_URL}
       - NOTIFICATION_EMAIL_ENABLED=${NOTIFICATION_EMAIL_ENABLED}
       - NOTIFICATION_EMAIL_TO=${NOTIFICATION_EMAIL_TO}
-      # ... autres variables SMTP
-```
-
-Ou montez directement le fichier `.env` :
-
-```yaml
-volumes:
-  - ./config/.env:/app/config/.env
+      # Ne passez PAS les mots de passe ici
+    secrets:
+      - smtp_password
 ```
 
 ---
@@ -237,3 +307,6 @@ R:
 - Token expiré : Une fois quand détecté
 - Réservations : Après chaque session (quotidien en mode --schedule)
 - Échecs : À chaque erreur critique
+
+**Q: Mes mots de passe sont-ils en sécurité dans .env ?**  
+R: Oui, le fichier `.env` est dans `.gitignore` et n'est jamais commité. Pour plus de sécurité en production, utilisez Docker Secrets ou les variables d'environnement système.

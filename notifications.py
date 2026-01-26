@@ -18,7 +18,14 @@ class NotificationService:
         self.smtp_host = os.getenv('SMTP_HOST')
         self.smtp_port = int(os.getenv('SMTP_PORT', 587))
         self.smtp_user = os.getenv('SMTP_USER')
+        
+        # Support Docker secrets pour le mot de passe
         self.smtp_password = os.getenv('SMTP_PASSWORD')
+        password_file = os.getenv('SMTP_PASSWORD_FILE')
+        if not self.smtp_password and password_file and os.path.exists(password_file):
+            with open(password_file, 'r') as f:
+                self.smtp_password = f.read().strip()
+        
         self.email_to = os.getenv('NOTIFICATION_EMAIL_TO')
     
     def send_token_expired_alert(self, error_message: str):
