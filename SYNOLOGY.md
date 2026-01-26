@@ -6,11 +6,81 @@ Ce guide explique comment déployer le bot OneFlex sur un NAS Synology en utilis
 
 1. **Docker** installé sur votre Synology (via le Package Center)
 2. **Accès SSH** au NAS (optionnel mais recommandé)
-3. Un **dossier partagé** pour stocker le projet
+3. Un **dossier partagé** pour stocker la configuration
 
 ## 🚀 Installation
 
-### Méthode 1 : Via SSH (Recommandé)
+### Méthode 1 : Image Docker précompilée (Recommandé)
+
+Utilisez l'image officielle publiée sur GitHub Container Registry - **aucun build nécessaire** !
+
+#### 1. Se connecter au NAS
+
+```bash
+ssh votre_utilisateur@ip_du_nas
+```
+
+#### 2. Créer la structure de projet
+
+```bash
+cd /volume1/docker  # ou votre dossier docker préféré
+mkdir -p oneflex-bot/config
+cd oneflex-bot
+```
+
+#### 3. Télécharger le docker-compose
+
+```bash
+# Télécharger le docker-compose configuré pour GHCR
+wget https://raw.githubusercontent.com/Kiwi41/oneflex-bot/main/docker-compose.ghcr.yml -O docker-compose.yml
+```
+
+#### 4. Créer le fichier .env
+
+```bash
+cat > config/.env << 'EOF'
+# Tokens OneFlex
+ONEFLEX_TOKEN=votre_token_ici
+ONEFLEX_REFRESH_TOKEN=votre_refresh_token_ici
+
+# Configuration
+RESERVATION_TIME=03:05
+RESERVATION_DAYS_AHEAD=7
+RESERVATION_DAYS_OF_WEEK=1,2,3,4,5
+
+# Récurrent (0 = désactivé)
+RECURRING_WEEKS=4
+
+# Vacances (optionnel)
+VACATION_DATES=
+AUTO_CANCEL_VACATIONS=true
+EOF
+```
+
+#### 5. Éditer la configuration
+
+```bash
+nano config/.env  # ou vim config/.env
+```
+
+Ajoutez vos vrais tokens OneFlex.
+
+#### 6. Lancer le container
+
+```bash
+docker-compose pull  # Télécharger l'image
+docker-compose up -d  # Lancer en arrière-plan
+```
+
+#### 7. Vérifier les logs
+
+```bash
+docker-compose logs -f
+```
+
+### Méthode 2 : Build local depuis le code source
+
+Si vous préférez compiler l'image vous-même :
 
 #### 1. Se connecter au NAS
 
@@ -21,7 +91,7 @@ ssh votre_utilisateur@ip_du_nas
 #### 2. Cloner le projet
 
 ```bash
-cd /volume1/docker  # ou votre dossier docker préféré
+cd /volume1/docker
 git clone https://github.com/Kiwi41/oneflex-bot.git
 cd oneflex-bot
 ```
@@ -37,53 +107,51 @@ cp .env.example config/.env
 
 ```bash
 nano config/.env
-# ou
-vim config/.env
 ```
 
-Ajoutez vos tokens OneFlex :
-```bash
-ONEFLEX_TOKEN=votre_token_ici
-ONEFLEX_REFRESH_TOKEN=votre_refresh_token_ici
-RESERVATION_TIME=09:00
-RESERVATION_DAYS_AHEAD=7
-
-# Optionnel : pour réservation récurrente (ex: Lundi, Mercredi, Vendredi)
-RESERVATION_DAYS_OF_WEEK=1,3,5
-```
+Ajoutez vos tokens OneFlex.
 
 #### 5. Construire et lancer le container
 
 ```bash
+# Build local de l'image
 docker-compose build
+
+# Lancer en arrière-plan
 docker-compose up -d
 ```
 
-### Méthode 2 : Via Synology Docker GUI
+### Méthode 3 : Via Synology Docker GUI
 
-#### 1. Télécharger le projet
+#### Option A : Utiliser l'image précompilée (Recommandé)
 
-Téléchargez le projet depuis GitHub et décompressez-le dans un dossier partagé Synology (ex: `/docker/oneflex-bot`)
+1. Ouvrez **Container Manager** (ou Docker) depuis le menu DSM
+2. Allez dans **Registre**
+3. Recherchez `ghcr.io/kiwi41/oneflex-bot` ou ajoutez le registre GHCR
+4. Téléchargez l'image `latest`
 
-#### 2. Préparer la configuration
+Puis créez le container avec l'interface graphique (voir section Configuration ci-dessous).
 
-1. Créez un dossier `config` dans `/docker/oneflex-bot`
-2. Copiez `.env.example` vers `config/.env`
-3. Éditez `config/.env` avec vos tokens OneFlex
+#### Option B : Build local
 
-#### 3. Ouvrir Docker dans DSM
+1. Téléchargez le projet depuis GitHub et décompressez-le dans un dossier partagé Synology (ex: `/docker/oneflex-bot`)
 
-1. Ouvrez **Docker** depuis le menu des applications
-2. Allez dans l'onglet **Image**
-3. Cliquez sur **Ajouter** > **Ajouter depuis un fichier**
-4. Sélectionnez le `Dockerfile` du projet
-5. Nommez l'image `oneflex-bot` et cliquez sur **Construire**
+2. Préparez la configuration :
+   - Créez un dossier `config` dans `/docker/oneflex-bot`
+   - Copiez `.env.example` vers `config/.env`
+   - Éditez `config/.env` avec vos tokens OneFlex
+
+3. Ouvrez **Container Manager** dans DSM :
+   - Allez dans l'onglet **Image**
+   - Cliquez sur **Ajouter** > **Ajouter depuis un fichier**
+   - Sélectionnez le `Dockerfile` du projet
+   - Nommez l'image `oneflex-bot` et cliquez sur **Construire**
 
 #### 4. Créer le container
 
-1. Une fois l'image construite, allez dans l'onglet **Container**
+1. Une fois l'image disponible, allez dans l'onglet **Container**
 2. Cliquez sur **Créer**
-3. Sélectionnez l'image `oneflex-bot`
+3. Sélectionnez l'image `oneflex-bot` ou `ghcr.io/kiwi41/oneflex-bot`
 4. Configurez le container :
 
 **Paramètres généraux :**
