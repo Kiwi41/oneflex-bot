@@ -6,7 +6,7 @@ Bot Python pour automatiser la réservation de places de travail sur OneFlex ave
 
 - ✅ **Connexion SSO** avec authentification par token
 - ✅ **Rafraîchissement automatique** du token d'accès (plus besoin de le mettre à jour manuellement)
-- ✅ **Réservation automatique** de votre bureau favori
+- ✅ **Réservation automatique** de votre bureau favori avec **fallback** si occupé
 - ✅ **Réservation récurrente** par jours de semaine (ex: tous les Lundi/Mercredi/Vendredi)
 - ✅ **Gestion des vacances** : exclusion et annulation automatique des réservations (voir [VACATIONS.md](VACATIONS.md))
 - ✅ **Planification** des réservations quotidiennes
@@ -184,7 +184,36 @@ AUTO_CANCEL_VACATIONS=true
 
 📖 **Guide complet** : [VACATIONS.md](VACATIONS.md)
 
-## 🐳 Déploiement Docker sur Synology NAS
+## � Fallback automatique des bureaux
+
+Si votre bureau favori principal est déjà réservé, le bot essaie **automatiquement** vos autres bureaux favoris dans l'ordre de préférence.
+
+### Comment ça fonctionne
+
+Le bot récupère vos bureaux dans cet ordre :
+1. **Bureaux marqués comme favoris** dans OneFlex
+2. **Bureaux les plus réservés** (par ordre décroissant)
+
+### Exemple d'exécution
+
+```
+📌 Bureau favori principal: Bureau COP-0-05 (+2 alternative(s))
+🎯 Essai du bureau principal: Bureau COP-0-05
+⚠️ Bureau occupé, essai du suivant...
+🔄 Essai du bureau alternatif #1: Bureau CP-0-33
+✅ Réservation confirmée!
+```
+
+### Configuration
+
+Aucune configuration nécessaire ! Le bot :
+- ✅ Utilise automatiquement vos favoris OneFlex
+- ✅ Analyse votre historique de réservations
+- ✅ Essaie tous vos bureaux jusqu'à trouver un disponible
+
+**💡 Astuce** : Marquez plusieurs bureaux comme favoris dans OneFlex pour augmenter vos chances de réservation.
+
+## �🐳 Déploiement Docker sur Synology NAS
 
 Le bot peut être déployé sur un NAS Synology avec Docker. Consultez le guide complet : **[SYNOLOGY.md](SYNOLOGY.md)**
 
