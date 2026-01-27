@@ -11,8 +11,8 @@ services:
     restart: unless-stopped
     
     volumes:
-      # Monter le fichier .env depuis le NAS
-      - ./config/.env:/app/config/.env:ro
+      # Monter tout le répertoire config (pour .env et session.json)
+      - ./config:/app/config:rw
       # Optionnel : logs
       - ./logs:/app/logs
     
