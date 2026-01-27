@@ -315,8 +315,8 @@ class OneFlexClient:
         Returns:
             bool: True si la réservation est réussie
         """
-        # Vérifier si une réservation existe déjà pour cette date et ce bureau
-        if self.has_booking_for_date(date, desk_id):
+        # Vérifier si une réservation existe déjà pour cette date (n'importe quel bureau)
+        if self.has_booking_for_date(date):
             logger.info(f"✅ Réservation déjà existante pour {desk_name} le {date.strftime('%d/%m/%Y')}")
             return True
         
