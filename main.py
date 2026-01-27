@@ -301,15 +301,15 @@ class OneFlexBot:
         if Config.VACATION_DATES:
             logger.info(self.vacation_manager.format_vacations_summary())
         
-        # Job de rafraîchissement préventif du token toutes les heures
+        # Job de rafraîchissement préventif du token toutes les 10 minutes
         def refresh_token_job():
             if self.client.refresh_token:
                 logger.info("🔄 Rafraîchissement préventif du token...")
                 self.client.refresh_access_token()
         
-        # Planifier le rafraîchissement du token toutes les heures
-        schedule.every().hour.do(refresh_token_job)
-        logger.info("🔄 Rafraîchissement automatique du token activé (toutes les heures)")
+        # Planifier le rafraîchissement du token toutes les 10 minutes
+        schedule.every(10).minutes.do(refresh_token_job)
+        logger.info("🔄 Rafraîchissement automatique du token activé (toutes les 10 minutes)")
         
         if Config.RECURRING_WEEKS > 0:
             logger.info(f"⏰ Réservation récurrente configurée pour {Config.RESERVATION_TIME}")
