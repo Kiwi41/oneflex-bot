@@ -41,6 +41,14 @@ class OneFlexClient:
             logger.info("🔑 Token d'authentification fourni")
             if self.refresh_token:
                 logger.info("🔄 Refresh token disponible pour renouvellement automatique")
+            
+            # Vérifier si une session persistante existe
+            try:
+                from session_manager import SessionManager
+                if SessionManager().session_exists():
+                    logger.info("💾 Session persistante disponible pour rafraîchissement automatique")
+            except:
+                pass
     
     def _graphql_request(self, query: str, variables: Optional[Dict] = None, retry_on_auth_error: bool = True) -> Optional[Dict]:
         """
@@ -91,53 +99,67 @@ class OneFlexClient:
     
     def refresh_access_token(self) -> bool:
         """
-        Rafraîchit le token d'accès en utilisant le refresh_token
+        Rafraîchit le token d'accès en utilisant:
+        1. La session persistante (cookies sauvegardés)
+        2. Le refresh_token (si disponible via API - ne marche pas actuellement)
         
         Returns:
             bool: True si le rafraîchissement est réussi
         """
-        if not self.refresh_token:
-            logger.error("❌ Aucun refresh token disponible")
-            return False
-        
+        # Méthode 1: Utiliser la session persistante (cookies)
+        logger.info("🔄 Tentative de rafraîchissement via session persistante...")
         try:
-            # Endpoint pour rafraîchir le token
-            response = self.session.post(
-                f"{self.BASE_URL}/auth/refresh",
-                json={'refresh_token': self.refresh_token}
-            )
+            from session_manager import refresh_tokens_from_session
+            result = refresh_tokens_from_session(headless=True, timeout=30)
             
-            if response.status_code == 200:
-                data = response.json()
-                new_token = data.get('access_token')
+            if result:
+                self.token = result['access_token']
+                self.refresh_token = result['refresh_token']
+                self.session.headers.update({
+                    'Authorization': f'Bearer {self.token}'
+                })
+                self._update_env_token(result['access_token'])
+                logger.info("✅ Token rafraîchi avec succès via session persistante")
+                return True
+            else:
+                logger.warning("⚠️ Session expirée ou invalide")
                 
-                if new_token:
-                    self.token = new_token
-                    self.session.headers.update({
-                        'Authorization': f'Bearer {self.token}'
-                    })
+        except Exception as e:
+            logger.warning(f"⚠️ Impossible d'utiliser la session persistante: {e}")
+        
+        # Méthode 2: Essayer avec le refresh_token via API (on sait que ça ne marche pas)
+        if self.refresh_token:
+            try:
+                response = self.session.post(
+                    f"{self.BASE_URL}/auth/refresh",
+                    json={'refresh_token': self.refresh_token}
+                )
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    new_token = data.get('access_token')
                     
-                    # Mettre à jour le fichier .env avec le nouveau token
-                    self._update_env_token(new_token)
-                    
-                    logger.info("✅ Token rafraîchi avec succès")
-                    return True
-            
-            logger.error(f"❌ Échec du rafraîchissement: {response.status_code}")
-            logger.error(f"Response: {response.text[:500]}")
-            
-            # Alerter si le refresh token ne fonctionne plus
-            if notification_service:
-                error_msg = f"Impossible de rafraîchir le token (HTTP {response.status_code})"
-                notification_service.send_token_expired_alert(error_msg)
-            
-            return False
-            
-        except requests.exceptions.RequestException as e:
-            logger.error(f"❌ Erreur lors du rafraîchissement: {e}")
-            if notification_service:
-                notification_service.send_token_expired_alert(str(e))
-            return False
+                    if new_token:
+                        self.token = new_token
+                        self.session.headers.update({
+                            'Authorization': f'Bearer {self.token}'
+                        })
+                        self._update_env_token(new_token)
+                        logger.info("✅ Token rafraîchi avec succès via API")
+                        return True
+            except:
+                pass  # L'API ne supporte pas le refresh
+        
+        # Aucune méthode n'a fonctionné
+        logger.error("❌ Impossible de rafraîchir le token")
+        logger.error("📝 Action requise : Lancez 'python auto_get_tokens.py' pour vous reconnecter")
+        
+        if notification_service:
+            notification_service.send_token_expired_alert(
+                "Token expiré. Reconnectez-vous avec: python auto_get_tokens.py"
+            )
+        
+        return False
     
     def _update_env_token(self, new_token: str):
         """

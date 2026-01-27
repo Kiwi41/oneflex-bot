@@ -64,6 +64,16 @@ def get_oneflex_tokens(headless=False):
             if access_token and refresh_token:
                 print("\n✅ Tokens récupérés avec succès !\n")
                 
+                # Sauvegarder la session pour réutilisation future
+                try:
+                    from session_manager import SessionManager
+                    session_manager = SessionManager()
+                    all_cookies = driver.get_cookies()
+                    if session_manager.save_cookies(all_cookies):
+                        print("💾 Session sauvegardée pour rafraîchissement automatique\n")
+                except Exception as e:
+                    print(f"⚠️ Avertissement : impossible de sauvegarder la session: {e}\n")
+                
                 print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
                 print("🔑 ACCESS TOKEN:")
                 print(access_token)
