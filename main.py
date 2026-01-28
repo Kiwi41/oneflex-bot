@@ -197,7 +197,7 @@ class OneFlexBot:
         
         # Réserver chaque date
         stats = {'success': 0, 'failed': 0, 'already_booked': 0}
-        booked_dates = []  # Tracker les nouvelles réservations
+        new_bookings = []  # Tracker uniquement les NOUVELLES réservations
         
         for date in dates_to_book:
             date_obj = datetime.combine(date, datetime.min.time())
@@ -205,7 +205,7 @@ class OneFlexBot:
             
             logger.info(f"📅 {day_name} {date.strftime('%d/%m/%Y')}")
             
-            success = self.client.book_desk(
+            success, already_existed = self.client.book_desk(
                 desk_id=desk_id,
                 space_id=space_id,
                 date=date_obj,
@@ -213,11 +213,13 @@ class OneFlexBot:
             )
             
             if success:
-                stats['success'] += 1
-                booked_dates.append(date.strftime('%d/%m/%Y'))  # Ajouter la date réservée
+                if already_existed:
+                    stats['already_booked'] += 1
+                else:
+                    stats['success'] += 1
+                    new_bookings.append(date.strftime('%d/%m/%Y'))  # Nouvelle réservation
             else:
-                # Vérifier si c'est déjà réservé ou une autre erreur
-                stats['already_booked'] += 1
+                stats['failed'] += 1
             
             # Petite pause entre les réservations
             import time
@@ -225,13 +227,16 @@ class OneFlexBot:
         
         # Afficher le résumé
         logger.info(f"\n✅ Résumé:")
-        logger.info(f"  • Réservations créées: {stats['success']}")
-        logger.info(f"  • Déjà réservé/Échecs: {stats['already_booked']}")
+        logger.info(f"  • Nouvelles réservations: {stats['success']}")
+        logger.info(f"  • Déjà réservé: {stats['already_booked']}")
+        logger.info(f"  • Échecs: {stats['failed']}")
         logger.info(f"  • Total tenté: {len(dates_to_book)}")
         
-        # Envoyer notification de succès
+        # Envoyer notification UNIQUEMENT si nouvelles réservations
         if stats['success'] > 0:
-            notification_service.send_booking_success(stats['success'], weeks_ahead, booked_dates)
+            notification_service.send_booking_success(stats['success'], weeks_ahead, new_bookings)
+        elif stats['already_booked'] > 0 and stats['failed'] == 0:
+            logger.info("ℹ️  Aucune nouvelle réservation (toutes déjà existantes)")
         
         return stats
     

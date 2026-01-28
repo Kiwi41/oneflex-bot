@@ -354,17 +354,20 @@ class OneFlexClient:
             desk_name: Nom du bureau (pour l'affichage)
             
         Returns:
-            bool: True si la réservation est réussie
+            tuple: (success: bool, already_existed: bool)
+                - (True, False): Nouvelle réservation créée
+                - (True, True): Réservation déjà existante
+                - (False, False): Échec de la réservation
         """
         # Vérifier si une réservation existe déjà pour cette date (n'importe quel bureau)
         if self.has_booking_for_date(date):
             logger.info(f"✅ Réservation déjà existante pour {desk_name} le {date.strftime('%d/%m/%Y')}")
-            return True
+            return (True, True)
         
         user_id = self.get_my_user_id()
         if not user_id:
             logger.error("❌ Impossible de récupérer l'ID utilisateur")
-            return False
+            return (False, False)
         
         # Par défaut, réserver toute la journée
         if not moments:
@@ -413,10 +416,10 @@ class OneFlexClient:
         if data and 'createAffectation' in data:
             moments_str = " + ".join(moments)
             logger.info(f"✅ Réservation confirmée: {desk_name} le {date.strftime('%d/%m/%Y')} ({moments_str})")
-            return True
+            return (True, False)  # Nouvelle réservation créée
         
         logger.error(f"❌ Échec de la réservation")
-        return False
+        return (False, False)
     
     def cancel_booking(self, affectation_id: str) -> bool:
         """
