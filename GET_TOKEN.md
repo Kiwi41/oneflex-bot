@@ -4,8 +4,8 @@ Puisque OneFlex utilise SSO, vous devez récupérer vos tokens d'authentificatio
 
 ## 🔑 Tokens nécessaires
 
-1. **access_token** : Token d'accès (expire après 15 minutes)
-2. **refresh_token** : Token pour renouveler automatiquement l'access_token (longue durée)
+1. **access_token** : Token d'accès (expire après ~15 minutes, renouvelé automatiquement)
+2. **refresh_token** : Token pour le renouvellement automatique (longue durée, plusieurs heures)
 
 ## 🤖 Méthode Automatique (Recommandée)
 
@@ -44,9 +44,13 @@ ONEFLEX_TOKEN=votre_access_token_ici
 ONEFLEX_REFRESH_TOKEN=votre_refresh_token_ici
 ```
 
-## ✨ Rafraîchissement automatique
+## ✨ Renouvellement automatique intégré
 
-Avec le `refresh_token` configuré, le bot rafraîchira **automatiquement** l'`access_token` quand il expire. Vous n'aurez plus besoin de le mettre à jour manuellement !
+**Bonne nouvelle !** Avec le `refresh_token` configuré, le bot renouvelle **automatiquement** l'`access_token` toutes les 15 minutes quand il expire. 
+
+**Vous n'avez plus besoin de vous reconnecter manuellement !**
+
+Le bot utilise l'endpoint `/api/auth/token` avec le standard OAuth2 pour renouveler les tokens de manière transparente en arrière-plan.
 
 Le nouveau token sera automatiquement sauvegardé dans le fichier `.env`.
 

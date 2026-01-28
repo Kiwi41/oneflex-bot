@@ -18,9 +18,10 @@ Le bot OneFlex est un programme Python qui automatise la réservation de bureaux
 
 **Ce qu'il fait :**
 - Se connecte à OneFlex avec vos tokens d'authentification
+- **Renouvelle automatiquement les tokens** quand ils expirent (toutes les ~15 minutes)
 - Réserve automatiquement votre bureau favori
-- Peut réserver plusieurs semaines à l'avance
-- Gère vos périodes de vacances (n'atteste pas pendant vos absences)
+- Peut réserver plusieurs semaines à l'avance (mode récurrent)
+- Gère vos périodes de vacances (ne réserve pas pendant vos absences)
 - Vous envoie des notifications Discord
 
 **Quand il s'exécute :**
