@@ -24,5 +24,4 @@ services:
     # Mode par défaut : réservation récurrente pour les 5 prochaines semaines
     # Alternatives : --schedule (bot continu) ou --date YYYY-MM-DD (réservation unique)
     # Commenter cette ligne si vous ne souhaitez pas démarrer le bot automatiquement
-    command: python main.py --recurring 5
-
+    command: python main.py --schedule

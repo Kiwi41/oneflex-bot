@@ -1,5 +1,23 @@
 # Changelog
 
+## v1.8.2 - Smart Notifications (2026-01-28)
+
+### ✨ Improvements
+
+- **Smart notifications**: Bot now only notifies for NEW bookings, not pre-existing ones
+- Changed `book_desk()` return type from `bool` to `tuple(success, already_existed)`
+- Added separate tracking for new bookings vs already existing
+- Display "ℹ️ Aucune nouvelle réservation" message when all bookings pre-exist
+- Prevents notification spam when re-running the bot
+
+### 🔧 Technical Changes
+
+- Modified `book_desk()` to return `(True, True)` for pre-existing, `(True, False)` for new
+- Updated `main.py` to unpack tuple and track `new_bookings` separately
+- Conditional notification: only triggers when `stats['success'] > 0`
+
+---
+
 ## v1.8.1 - Notifications & Cleanup (2026-01-28)
 
 ### ✨ Improvements
