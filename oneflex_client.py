@@ -40,9 +40,111 @@ class OneFlexClient:
             })
             logger.info("🔑 Token d'authentification fourni")
             if self.refresh_token:
-                logger.info("🔄 Refresh token disponible (non utilisé - refresh manuel requis)")
-
-                pass
+                logger.info("🔄 Refresh token disponible pour auto-refresh")
+    
+    def refresh_access_token(self) -> bool:
+        """
+        Renouvelle l'access token en utilisant le refresh token
+        Utilise l'endpoint /api/auth/token avec grant_type=refresh_token
+        
+        Returns:
+            bool: True si le refresh est réussi
+        """
+        if not self.refresh_token:
+            logger.error("❌ Aucun refresh token disponible")
+            return False
+        
+        try:
+            logger.info("🔄 Tentative de refresh du token...")
+            
+            # Utiliser l'endpoint /api/auth/token avec la méthode OAuth2 standard
+            response = requests.post(
+                f"{self.BASE_URL}/auth/token",
+                json={
+                    'grant_type': 'refresh_token',
+                    'refresh_token': self.refresh_token
+                },
+                headers={'Content-Type': 'application/json'},
+                timeout=10
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                new_token = data.get('access_token')
+                
+                if new_token:
+                    # Mettre à jour le token en mémoire
+                    self.token = new_token
+                    self.session.headers.update({
+                        'Authorization': f'Bearer {new_token}'
+                    })
+                    
+                    # Sauvegarder le nouveau token dans .env
+                    self._update_env_token(new_token)
+                    
+                    logger.info("✅ Token renouvelé avec succès")
+                    return True
+            
+            logger.error(f"❌ Échec du refresh: HTTP {response.status_code}")
+            logger.error(f"Response: {response.text[:200]}")
+            return False
+            
+        except Exception as e:
+            logger.error(f"❌ Erreur lors du refresh: {e}")
+            return False
+    
+    def _update_env_token(self, new_token: str):
+        """
+        Met à jour le token dans le fichier .env
+        
+        Args:
+            new_token: Le nouveau access token
+        """
+        try:
+            import os
+            from pathlib import Path
+            
+            # Chemins possibles pour .env
+            env_paths = [
+                Path('.env'),
+                Path(__file__).parent / '.env',
+                Path('/app/.env')  # Dans Docker
+            ]
+            
+            env_file = None
+            for path in env_paths:
+                if path.exists():
+                    env_file = path
+                    break
+            
+            if not env_file:
+                logger.warning("⚠️  Fichier .env non trouvé, token non sauvegardé")
+                return
+            
+            # Lire le contenu actuel
+            with open(env_file, 'r') as f:
+                lines = f.readlines()
+            
+            # Mettre à jour la ligne ONEFLEX_TOKEN
+            updated = False
+            for i, line in enumerate(lines):
+                if line.startswith('ONEFLEX_TOKEN='):
+                    lines[i] = f'ONEFLEX_TOKEN={new_token}\n'
+                    updated = True
+                    break
+            
+            # Si la ligne n'existe pas, l'ajouter
+            if not updated:
+                lines.append(f'ONEFLEX_TOKEN={new_token}\n')
+            
+            # Écrire le nouveau contenu
+            with open(env_file, 'w') as f:
+                f.writelines(lines)
+            
+            logger.info(f"💾 Token mis à jour dans {env_file}")
+            
+        except Exception as e:
+            logger.error(f"❌ Erreur lors de la mise à jour du .env: {e}")
     
     def _graphql_request(self, query: str, variables: Optional[Dict] = None) -> Optional[Dict]:
         """
@@ -62,12 +164,26 @@ class OneFlexClient:
             
             response = self.session.post(self.GQL_ENDPOINT, json=payload)
             
-            # Si erreur 401, le token est expiré
+            # Si erreur 401, tenter un refresh automatique
             if response.status_code == 401:
-                logger.error("❌ Token invalide ou expiré")
+                logger.warning("⚠️  Token expiré, tentative de refresh automatique...")
+                
+                # Tenter le refresh une seule fois
+                if self.refresh_access_token():
+                    logger.info("✅ Token refreshé, nouvelle tentative de requête...")
+                    # Réessayer la requête avec le nouveau token
+                    response = self.session.post(self.GQL_ENDPOINT, json=payload)
+                    
+                    if response.status_code == 200:
+                        result = response.json()
+                        if 'errors' not in result:
+                            return result.get('data')
+                
+                # Si le refresh échoue ou la requête échoue encore
+                logger.error("❌ Refresh automatique échoué ou token toujours invalide")
                 if notification_service:
                     notification_service.send_token_expired_alert(
-                        "🔑 Token OneFlex expiré\n\n"
+                        "🔑 Token OneFlex expiré et refresh automatique échoué\n\n"
                         "Reconnectez-vous avec:\n"
                         "```\npython auto_get_tokens.py\n```\n"
                         "Puis redémarrez le bot Docker."

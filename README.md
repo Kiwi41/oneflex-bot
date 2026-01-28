@@ -14,23 +14,27 @@ Bot Python pour automatiser la réservation de places de travail sur OneFlex ave
 - ✅ **Support Docker** pour déploiement sur Synology NAS
 - ✅ **Notifications Discord** pour les événements importants
 
-## ⚠️ Gestion des tokens
+## ✅ Gestion des tokens
 
-**Important :** Les tokens OneFlex doivent être renouvelés manuellement (~1 fois par jour).
+**Bonne nouvelle :** Le bot renouvelle automatiquement les tokens quand ils expirent !
+
+Les tokens OneFlex ont une durée de vie courte (~15 minutes), mais grâce au `refresh_token`, 
+le bot les renouvelle automatiquement en arrière-plan. Vous n'avez rien à faire.
 
 Voir la documentation complète : [TOKEN_MANAGEMENT.md](docs/TOKEN_MANAGEMENT.md)
 
-### Renouvellement rapide
+### Configuration initiale uniquement
+
+Vous devez récupérer vos tokens **une seule fois** lors de l'installation :
 
 ```bash
 # Méthode simple
 python auto_get_tokens.py
 cp .env config/.env
-docker compose restart
-
-# Ou utiliser le script automatisé
-./renew_tokens.sh
+docker compose up -d
 ```
+
+Après cela, le bot gère tout automatiquement ! ✨
 
 ## 📦 Installation
 

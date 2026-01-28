@@ -1,90 +1,108 @@
 # Gestion des tokens OneFlex
 
-## ⚠️ Important : Renouvellement manuel requis
+## ✨ Refresh automatique intégré !
 
-L'API OneFlex **ne supporte pas le refresh automatique des tokens**. Les tokens doivent être renouvelés manuellement lorsqu'ils expirent.
+**Excellente nouvelle :** Le bot renouvelle désormais automatiquement les tokens lorsqu'ils expirent.
 
-## 📅 Durée de vie des tokens
+Grâce à l'endpoint `/api/auth/token` découvert, le bot peut renouveler les `access_token` 
+automatiquement en utilisant le `refresh_token`. Vous n'avez plus besoin de renouveler 
+manuellement les tokens toutes les 15 minutes !
 
-- **Access Token** : ~15 minutes après émission
-- **Session cookies** : 4-6 heures après connexion SSO
-- Les tokens restent valides tant que votre session SSO Worldline est active
+## 🔑 Comment ça marche ?
 
-## 🔄 Comment renouveler les tokens
+### Durée de vie des tokens
 
-### Méthode 1 : Depuis votre machine locale
+- **Access Token** : ~15 minutes (renouvelé automatiquement)
+- **Refresh Token** : Plusieurs heures/jours (tant que la session SSO est active)
+- **Session SSO** : Plusieurs heures (gérée par Worldline Azure AD)
+
+### Processus automatique
+
+1. 📡 Le bot fait une requête GraphQL
+2. 🚫 L'API répond `401 Unauthorized` (token expiré)
+3. 🔄 Le bot utilise automatiquement le `refresh_token` pour obtenir un nouveau `access_token`
+4. 💾 Le nouveau token est sauvegardé dans `.env`
+5. ♻️ La requête originale est réessayée avec succès
+6. ✅ Tout cela se passe de manière transparente !
+
+### Endpoint de refresh
+
+```http
+POST https://oneflex.myworldline.com/api/auth/token
+Content-Type: application/json
+
+{
+  "grant_type": "refresh_token",
+  "refresh_token": "6ecc79b280179dc304b9"
+}
+```
+
+Réponse :
+```json
+{
+  "token_type": "bearer",
+  "access_token": "eyJhbGci..."
+}
+```
+
+## 🚀 Configuration initiale
+
+Vous devez récupérer vos tokens **une seule fois** lors de l'installation :
+
+### Méthode automatique (Recommandée)
 
 ```bash
-# 1. Activer l'environnement virtuel
-cd /path/to/oneflex-bot
-source .venv/bin/activate  # ou .venv\Scripts\activate sur Windows
-
-# 2. Lancer l'outil de récupération
+# 1. Lancer l'outil de récupération
 python auto_get_tokens.py
 
-# 3. Se connecter via SSO dans le navigateur qui s'ouvre
-# Les tokens sont automatiquement récupérés et sauvegardés
+# 2. Se connecter via SSO dans le navigateur
+# Les tokens sont automatiquement récupérés
 
-# 4. Mettre à jour le fichier config/.env pour Docker
+# 3. Copier vers Docker si nécessaire
 cp .env config/.env
 
-# 5. Redémarrer le bot Docker
-docker compose restart
+# 4. Démarrer le bot
+docker compose up -d
 ```
 
-### Méthode 2 : Script automatisé (recommandé)
+### Méthode manuelle
 
-Créez un script `renew_tokens.sh` :
+1. Connectez-vous sur https://oneflex.myworldline.com
+2. Ouvrez les outils développeur (F12)
+3. Allez dans **Application** > **Cookies** > `https://oneflex.myworldline.com`
+4. Copiez les valeurs de :
+   - `access_token` → `ONEFLEX_TOKEN`
+   - `refresh_token` → `ONEFLEX_REFRESH_TOKEN`
+
+### Fichier .env
 
 ```bash
-#!/bin/bash
-cd /path/to/oneflex-bot
-source .venv/bin/activate
-python auto_get_tokens.py --headless 2>/dev/null || python auto_get_tokens.py
-cp .env config/.env
-docker compose restart
+# Tokens d'authentification (requis)
+ONEFLEX_TOKEN=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+ONEFLEX_REFRESH_TOKEN=6ecc79b280179dc304b9
 ```
 
-Ajoutez une tâche cron pour renouveler quotidiennement :
+## 🔔 Notifications automatiques
 
-```cron
-# Renouveler les tokens tous les jours à 2h du matin
-0 2 * * * /path/to/oneflex-bot/renew_tokens.sh
+Le bot vous prévient uniquement si le refresh échoue :
+
+### Cas 1 : Token expiré (Normal)
+```
+⚠️  Token expiré, tentative de refresh automatique...
+🔄 Tentative de refresh du token...
+✅ Token renouvelé avec succès
+💾 Token mis à jour dans .env
+✅ Token refreshé, nouvelle tentative de requête...
 ```
 
-### Méthode 3 : Sur Synology NAS
-
-1. **Via SSH** :
-   ```bash
-   ssh admin@nas-ip
-   cd /volume1/docker/oneflex-bot
-   python3 auto_get_tokens.py
-   cp .env config/.env
-   docker compose restart
-   ```
-
-2. **Via Task Scheduler** (interface web) :
-   - Panneau de configuration → Planificateur de tâches
-   - Créer → Tâche planifiée → Script défini par l'utilisateur
-   - Fréquence : Quotidien à 2h00
-   - Script :
-     ```bash
-     cd /volume1/docker/oneflex-bot
-     python3 auto_get_tokens.py
-     cp .env config/.env
-     docker compose restart
-     ```
-
-## 🔔 Notifications d'expiration
-
-Lorsqu'un token expire, le bot :
-1. ❌ S'arrête automatiquement
-2. 📧 Envoie une alerte Discord (si configuré)
-3. 📝 Log un message d'erreur clair
-
-**Exemple de message Discord :**
+### Cas 2 : Refresh échoué (Intervention requise)
 ```
-🔑 Token OneFlex expiré
+❌ Refresh automatique échoué ou token toujours invalide
+```
+
+**Message Discord :**
+```
+🔑 Token OneFlex expiré et refresh automatique échoué
 
 Reconnectez-vous avec:
 python auto_get_tokens.py
@@ -92,47 +110,79 @@ python auto_get_tokens.py
 Puis redémarrez le bot Docker.
 ```
 
-## 🛠️ Dépannage
+## 🔧 Dépannage
 
-### Le bot s'arrête avec "Token expiré"
-
-**Solution :** Relancez `auto_get_tokens.py` pour renouveler les tokens.
-
-### auto_get_tokens.py ne s'ouvre pas
+### Le refresh automatique échoue
 
 **Causes possibles :**
-- Chrome/Chromium non installé
-- Pas d'affichage graphique (serveur distant)
+- Le `refresh_token` a expiré (session SSO terminée)
+- Vous vous êtes déconnecté de Worldline SSO
+- Le `refresh_token` est manquant dans `.env`
 
-**Solution :** Utilisez le mode headless si disponible ou lancez depuis une machine avec interface graphique.
+**Solution :**
+```bash
+python auto_get_tokens.py
+cp .env config/.env
+docker compose restart
+```
 
-### Les tokens expirent trop rapidement
+### Tester le refresh manuellement
 
-**Normal !** Les access tokens ne durent que 15 minutes. C'est la session SSO qui les maintient valides.
+```bash
+python test_auto_refresh.py
+```
 
-Si votre session SSO expire (déconnexion IdP, timeout), les tokens ne peuvent plus être renouvelés et vous devez vous reconnecter.
+Ce script va :
+- Vérifier que le token actuel fonctionne
+- Forcer un refresh du token
+- Vérifier que le nouveau token fonctionne
+- Tester l'auto-refresh sur 401
+- Vérifier la persistence dans `.env`
 
-## 📊 Fréquence de renouvellement recommandée
+### Logs de refresh
 
-| Environnement | Fréquence | Méthode |
-|---------------|-----------|---------|
-| Développement | À la demande | Manuel |
-| Production (NAS) | Quotidien | Cron/Task Scheduler |
-| CI/CD | N/A | Tokens en secrets |
+Le bot log chaque refresh automatique :
+
+```bash
+# Voir les logs en temps réel
+docker logs -f oneflex-bot
+
+# Filtrer uniquement les refreshs
+docker logs oneflex-bot 2>&1 | grep -i refresh
+```
 
 ## 🔐 Sécurité
 
 - ⚠️ Ne committez **JAMAIS** les tokens dans Git
 - ✅ Les tokens sont dans `.env` (ignoré par `.gitignore`)
-- ✅ `config/session.json` est également ignoré
 - 🔒 Les tokens donnent accès complet à votre compte OneFlex
 - 🗑️ Révoquez les tokens si compromis en changeant votre mot de passe SSO
 
-## 💡 Améliorations futures
+## 📊 Fréquence de renouvellement
 
-Des solutions de refresh automatique pourraient être explorées :
-- Intégration OAuth2 complète avec refresh_token
-- Proxy de session persistant
-- Extension du protocole SSO
+| Token | Durée | Renouvellement |
+|-------|--------|----------------|
+| Access Token | ~15 min | Automatique toutes les 15 min |
+| Refresh Token | Plusieurs heures | Automatique jusqu'à expiration session SSO |
+| Session SSO | Plusieurs heures | Manuel (reconnexion SSO requise) |
 
-Actuellement, le renouvellement manuel reste la méthode la plus fiable et sécurisée.
+## 🎉 Avantages du refresh automatique
+
+✅ **Plus de réveils à 3h du matin** pour renouveler les tokens  
+✅ **Le bot fonctionne en continu** sans intervention  
+✅ **Transparence totale** : le refresh se fait en arrière-plan  
+✅ **Persistance** : le nouveau token est automatiquement sauvegardé dans `.env`  
+✅ **Notifications intelligentes** : alerté uniquement en cas de problème  
+
+## 🔍 Découverte technique
+
+L'endpoint de refresh a été découvert par reverse engineering :
+
+```bash
+# Test de tous les endpoints possibles
+python test_refresh_methods.py
+
+# Résultat : /api/auth/token fonctionne avec grant_type=refresh_token
+```
+
+Cet endpoint suit le standard OAuth2 pour le renouvellement des tokens.
