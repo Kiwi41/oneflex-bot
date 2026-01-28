@@ -1,5 +1,6 @@
 #!/bin/bash
 # Script de déploiement automatique sur Synology NAS
+# Utilise l'image Docker publiée sur GitHub Container Registry
 
 set -e
 
@@ -7,7 +8,6 @@ set -e
 NAS_HOST="192.168.0.191"
 NAS_USER="your_synology_user"  # À modifier
 NAS_PATH="/volume1/docker/oneflex"  # Chemin sur le NAS
-REMOTE_BRANCH="main"
 
 echo "🚀 Déploiement OneFlex Bot sur Synology NAS"
 echo "============================================="
@@ -25,24 +25,24 @@ fi
 
 echo "✅ Connexion SSH établie"
 
-# Option 1: Déploiement via Git (recommandé)
+# Déployer via l'image Docker GHCR
 echo ""
-echo "📦 Déploiement via Git..."
+echo "📦 Pull de la dernière image Docker..."
 ssh "${NAS_USER}@${NAS_HOST}" << 'ENDSSH'
     cd /volume1/docker/oneflex || exit 1
     
-    echo "📥 Pull des dernières modifications..."
-    git pull origin main
+    echo "📥 Pull de la dernière image depuis GitHub..."
+    docker compose -f docker-compose.ghcr.yml pull
     
-    echo "🔄 Redémarrage du conteneur Docker..."
-    docker compose down
-    docker compose up -d --build
+    echo "🔄 Redémarrage du conteneur..."
+    docker compose -f docker-compose.ghcr.yml down
+    docker compose -f docker-compose.ghcr.yml up -d
     
     echo "📊 Statut du conteneur:"
-    docker compose ps
+    docker compose -f docker-compose.ghcr.yml ps
     
     echo "📝 Derniers logs:"
-    docker compose logs --tail=10
+    docker compose -f docker-compose.ghcr.yml logs --tail=10
 ENDSSH
 
 echo ""
