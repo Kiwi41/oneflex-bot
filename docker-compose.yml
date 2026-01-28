@@ -6,7 +6,7 @@ services:
     container_name: oneflex-bot
     # restart: unless-stopped
     volumes:
-      # Monter tout le répertoire config (pour .env et session.json)
+      # Monter le répertoire config (pour .env)
       - ./config:/app/config:rw
       # Optionnel : logs
       - ./logs:/app/logs
