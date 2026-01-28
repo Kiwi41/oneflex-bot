@@ -6,7 +6,7 @@ set -e
 
 # Configuration
 NAS_HOST="192.168.0.191"
-NAS_USER="your_synology_user"  # À modifier
+NAS_USER="kiwi"
 NAS_PATH="/volume1/docker/oneflex"  # Chemin sur le NAS
 
 echo "🚀 Déploiement OneFlex Bot sur Synology NAS"
