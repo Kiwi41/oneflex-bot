@@ -78,8 +78,8 @@ docker compose up -d
 
 ```bash
 # Tokens d'authentification (requis)
-ONEFLEX_TOKEN=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-ONEFLEX_REFRESH_TOKEN=6ecc79b280179dc304b9
+ONEFLEX_TOKEN=votre_access_token_ici
+ONEFLEX_REFRESH_TOKEN=votre_refresh_token_ici
 ```
 
 ## 🔔 Notifications automatiques

@@ -40,8 +40,8 @@ pip install selenium
 6. **Ajoutez-les dans votre fichier `.env`** :
 
 ```bash
-ONEFLEX_TOKEN=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-ONEFLEX_REFRESH_TOKEN=de24ee12d9703f31ccf1...
+ONEFLEX_TOKEN=votre_access_token_ici
+ONEFLEX_REFRESH_TOKEN=votre_refresh_token_ici
 ```
 
 ## ✨ Rafraîchissement automatique

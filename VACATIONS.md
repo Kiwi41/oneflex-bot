@@ -310,8 +310,8 @@ R: Oui, commentez ou videz `VACATION_DATES` dans le `.env`.
 
 ```bash
 # .env
-ONEFLEX_TOKEN=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-ONEFLEX_REFRESH_TOKEN=de24ee12d9703f31ccf1
+ONEFLEX_TOKEN=votre_access_token_ici
+ONEFLEX_REFRESH_TOKEN=votre_refresh_token_ici
 
 # Réservation automatique à 3h du matin
 RESERVATION_TIME=03:00
