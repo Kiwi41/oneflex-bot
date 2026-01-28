@@ -44,10 +44,8 @@ Actions requises:
 2. Mettez à jour votre fichier .env
 3. Redémarrez le bot
 
-Documentation: GET_TOKEN.md
+Documentation: https://github.com/Kiwi41/oneflex-bot/blob/main/docs/TOKEN_MANAGEMENT.md
 """
-        
-        logger.critical(message)
         
         # Envoyer via webhook (Discord, Slack, etc.)
         if self.webhook_url:

@@ -101,10 +101,6 @@ class OneFlexClient:
         Returns:
             bool: False (le refresh automatique n'est pas supporté)
         """
-        logger.error("❌ Token expiré")
-        logger.error("📝 Action requise : Relancez 'python auto_get_tokens.py' pour renouveler les tokens")
-        logger.error("💡 Astuce : Les tokens sont valides environ 4-6 heures après connexion")
-        
         if notification_service:
             notification_service.send_token_expired_alert(
                 "🔑 Token OneFlex expiré\n\n"
