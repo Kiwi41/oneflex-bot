@@ -1,5 +1,27 @@
 # Changelog
 
+## v1.8.1 - Notifications & Cleanup (2026-01-28)
+
+### ✨ Improvements
+
+- **Enhanced Discord notifications**: Now shows the specific dates that were booked
+- Better visibility into bot actions
+- Date format: `• DD/MM/YYYY` for each reservation
+
+### 🧹 Cleanup
+
+- Removed obsolete `config/session.json` file
+- Updated Docker Compose comments (removed session.json references)
+- Cleaned `.gitignore` from obsolete entries
+
+### 🔧 CI/CD
+
+- Fixed GitHub Actions Docker build workflow
+- Removed multi-architecture build (arm64 was causing failures)
+- Faster and more reliable builds (linux/amd64 only)
+
+---
+
 ## v1.8.0 - Automatic Token Refresh (2026-01-28)
 
 ### ✨ Major Features
