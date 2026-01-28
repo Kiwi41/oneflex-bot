@@ -40,14 +40,8 @@ class OneFlexClient:
             })
             logger.info("🔑 Token d'authentification fourni")
             if self.refresh_token:
-                logger.info("🔄 Refresh token disponible pour renouvellement automatique")
-            
-            # Vérifier si une session persistante existe
-            try:
-                from session_manager import SessionManager
-                if SessionManager().session_exists():
-                    logger.info("💾 Session persistante disponible pour rafraîchissement automatique")
-            except:
+                logger.info("🔄 Refresh token disponible (non utilisé - refresh manuel requis)")
+
                 pass
     
     def _graphql_request(self, query: str, variables: Optional[Dict] = None, retry_on_auth_error: bool = True) -> Optional[Dict]:
@@ -99,93 +93,67 @@ class OneFlexClient:
     
     def refresh_access_token(self) -> bool:
         """
-        Rafraîchit le token d'accès en utilisant:
-        1. La session persistante (cookies sauvegardés)
-        2. Le refresh_token (si disponible via API - ne marche pas actuellement)
+        Rafraîchit le token d'accès.
+        
+        Note: L'API OneFlex ne supporte pas le refresh automatique.
+        Les tokens doivent être renouvelés manuellement via auto_get_tokens.py
         
         Returns:
-            bool: True si le rafraîchissement est réussi
+            bool: False (le refresh automatique n'est pas supporté)
         """
-        # Méthode 1: Utiliser la session persistante (cookies)
-        logger.info("🔄 Tentative de rafraîchissement via session persistante...")
-        try:
-            from session_manager import refresh_tokens_from_session
-            result = refresh_tokens_from_session(headless=True, timeout=30)
-            
-            if result:
-                self.token = result['access_token']
-                self.refresh_token = result['refresh_token']
-                self.session.headers.update({
-                    'Authorization': f'Bearer {self.token}'
-                })
-                self._update_env_token(result['access_token'])
-                logger.info("✅ Token rafraîchi avec succès via session persistante")
-                return True
-            else:
-                logger.warning("⚠️ Session expirée ou invalide")
-                
-        except Exception as e:
-            logger.warning(f"⚠️ Impossible d'utiliser la session persistante: {e}")
-        
-        # Méthode 2: Essayer avec le refresh_token via API (on sait que ça ne marche pas)
-        if self.refresh_token:
-            try:
-                response = self.session.post(
-                    f"{self.BASE_URL}/auth/refresh",
-                    json={'refresh_token': self.refresh_token}
-                )
-                
-                if response.status_code == 200:
-                    data = response.json()
-                    new_token = data.get('access_token')
-                    
-                    if new_token:
-                        self.token = new_token
-                        self.session.headers.update({
-                            'Authorization': f'Bearer {self.token}'
-                        })
-                        self._update_env_token(new_token)
-                        logger.info("✅ Token rafraîchi avec succès via API")
-                        return True
-            except:
-                pass  # L'API ne supporte pas le refresh
-        
-        # Aucune méthode n'a fonctionné
-        logger.error("❌ Impossible de rafraîchir le token")
-        logger.error("📝 Action requise : Lancez 'python auto_get_tokens.py' pour vous reconnecter")
+        logger.error("❌ Token expiré")
+        logger.error("📝 Action requise : Relancez 'python auto_get_tokens.py' pour renouveler les tokens")
+        logger.error("💡 Astuce : Les tokens sont valides environ 4-6 heures après connexion")
         
         if notification_service:
             notification_service.send_token_expired_alert(
-                "Token expiré. Reconnectez-vous avec: python auto_get_tokens.py"
+                "🔑 Token OneFlex expiré\n\n"
+                "Reconnectez-vous avec:\n"
+                "```\npython auto_get_tokens.py\n```\n"
+                "Puis redémarrez le bot Docker."
             )
         
         return False
     
     def _update_env_token(self, new_token: str):
         """
-        Met à jour le token dans le fichier .env
+        Met à jour le token dans le fichier .env (config/.env en priorité pour Docker)
         
         Args:
             new_token: Le nouveau token d'accès
         """
         try:
             import os
-            env_path = os.path.join(os.path.dirname(__file__), '.env')
             
-            if not os.path.exists(env_path):
-                return
+            # Essayer d'abord config/.env (utilisé dans Docker)
+            env_paths = [
+                os.path.join(os.path.dirname(__file__), 'config', '.env'),
+                os.path.join(os.path.dirname(__file__), '.env')
+            ]
             
-            with open(env_path, 'r') as f:
-                lines = f.readlines()
+            updated_count = 0
+            for env_path in env_paths:
+                if not os.path.exists(env_path):
+                    continue
+                    
+                try:
+                    with open(env_path, 'r') as f:
+                        lines = f.readlines()
+                    
+                    with open(env_path, 'w') as f:
+                        for line in lines:
+                            if line.startswith('ONEFLEX_TOKEN='):
+                                f.write(f'ONEFLEX_TOKEN={new_token}\n')
+                            else:
+                                f.write(line)
+                    
+                    updated_count += 1
+                    logger.debug(f"📝 {env_path} mis à jour")
+                except Exception as e:
+                    logger.debug(f"⚠️ Erreur sur {env_path}: {e}")
             
-            with open(env_path, 'w') as f:
-                for line in lines:
-                    if line.startswith('ONEFLEX_TOKEN='):
-                        f.write(f'ONEFLEX_TOKEN={new_token}\n')
-                    else:
-                        f.write(line)
-            
-            logger.info("📝 Fichier .env mis à jour avec le nouveau token")
+            if updated_count > 0:
+                logger.info(f"📝 Token mis à jour dans {updated_count} fichier(s) .env")
             
         except Exception as e:
             logger.warning(f"⚠️ Impossible de mettre à jour .env: {e}")

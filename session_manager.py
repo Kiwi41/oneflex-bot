@@ -178,11 +178,27 @@ def refresh_tokens_from_session(headless: bool = True, timeout: int = 30) -> Opt
         
         # Recharger la page avec les cookies
         driver.get('https://oneflex.myworldline.com')
-        time.sleep(3)
+        time.sleep(5)  # Attendre que la page charge et rafraîchisse les tokens
         
-        # Récupérer les nouveaux tokens
+        # Récupérer les nouveaux tokens après le refresh automatique
         logger.info("🔍 Récupération des tokens...")
-        for i in range(10):
+        
+        # Essayer d'abord le localStorage/sessionStorage (plus courant pour les SPAs)
+        try:
+            access_token = driver.execute_script("return localStorage.getItem('access_token') || sessionStorage.getItem('access_token');")
+            refresh_token = driver.execute_script("return localStorage.getItem('refresh_token') || sessionStorage.getItem('refresh_token');")
+            
+            if access_token and refresh_token:
+                logger.info("✅ Tokens récupérés depuis localStorage/sessionStorage")
+                return {
+                    'access_token': access_token,
+                    'refresh_token': refresh_token
+                }
+        except Exception as e:
+            logger.debug(f"Pas de tokens dans localStorage/sessionStorage: {e}")
+        
+        # Sinon, essayer les cookies
+        for i in range(15):  # Augmenter le nombre de tentatives
             cookies = driver.get_cookies()
             access_token = None
             refresh_token = None
@@ -194,13 +210,30 @@ def refresh_tokens_from_session(headless: bool = True, timeout: int = 30) -> Opt
                     refresh_token = cookie['value']
             
             if access_token and refresh_token:
-                logger.info("✅ Tokens récupérés avec succès via session persistante")
-                return {
-                    'access_token': access_token,
-                    'refresh_token': refresh_token
-                }
+                # Vérifier que le token n'est pas expiré en décodant le JWT
+                import json
+                import base64
+                try:
+                    # Décoder le payload du JWT (partie du milieu)
+                    payload = access_token.split('.')[1]
+                    # Ajouter du padding si nécessaire
+                    payload += '=' * (4 - len(payload) % 4)
+                    decoded = json.loads(base64.b64decode(payload))
+                    exp_time = decoded.get('exp', 0)
+                    current_time = time.time()
+                    
+                    if exp_time > current_time + 60:  # Token valide pour au moins 1 minute
+                        logger.info("✅ Tokens récupérés avec succès via session persistante")
+                        return {
+                            'access_token': access_token,
+                            'refresh_token': refresh_token
+                        }
+                    else:
+                        logger.debug(f"Token expiré ou expirant bientôt, attente... ({i+1}/15)")
+                except Exception as e:
+                    logger.debug(f"Erreur décodage JWT: {e}")
             
-            time.sleep(1)
+            time.sleep(2)  # Attendre plus longtemps entre les tentatives
         
         logger.error("❌ Session expirée ou invalide. Reconnectez-vous avec auto_get_tokens.py")
         # Supprimer la session invalide

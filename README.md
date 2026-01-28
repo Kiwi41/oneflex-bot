@@ -1,18 +1,36 @@
 # Bot de Réservation OneFlex
 
-Bot Python pour automatiser la réservation de places de travail sur OneFlex avec support SSO et rafraîchissement automatique du token.
+Bot Python pour automatiser la réservation de places de travail sur OneFlex avec support SSO.
 
 ## ✨ Fonctionnalités
 
 - ✅ **Connexion SSO** avec authentification par token
-- ✅ **Rafraîchissement automatique** du token d'accès (plus besoin de le mettre à jour manuellement)
 - ✅ **Réservation automatique** de votre bureau favori avec **fallback** si occupé
 - ✅ **Réservation récurrente** par jours de semaine (ex: tous les Lundi/Mercredi/Vendredi)
-- ✅ **Gestion des vacances** : exclusion et annulation automatique des réservations (voir [VACATIONS.md](VACATIONS.md))
+- ✅ **Gestion des vacances** : exclusion et annulation automatique des réservations (voir [VACATIONS.md](docs/VACATIONS.md))
 - ✅ **Planification** des réservations quotidiennes
 - ✅ **Affichage** de vos réservations actuelles
 - ✅ **Réservation pour une date spécifique**
 - ✅ **Support Docker** pour déploiement sur Synology NAS
+- ✅ **Notifications Discord** pour les événements importants
+
+## ⚠️ Gestion des tokens
+
+**Important :** Les tokens OneFlex doivent être renouvelés manuellement (~1 fois par jour).
+
+Voir la documentation complète : [TOKEN_MANAGEMENT.md](docs/TOKEN_MANAGEMENT.md)
+
+### Renouvellement rapide
+
+```bash
+# Méthode simple
+python auto_get_tokens.py
+cp .env config/.env
+docker compose restart
+
+# Ou utiliser le script automatisé
+./renew_tokens.sh
+```
 
 ## 📦 Installation
 
