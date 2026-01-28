@@ -55,14 +55,18 @@ Documentation: https://github.com/Kiwi41/oneflex-bot/blob/main/docs/TOKEN_MANAGE
         if self.email_enabled and self.email_to:
             self._send_email("🚨 OneFlex Bot - Token expiré", message)
     
-    def send_booking_success(self, count: int, weeks: int = 1):
+    def send_booking_success(self, count: int, weeks: int = 1, dates: list = None):
         """Notification de succès de réservation"""
+        dates_str = ""
+        if dates:
+            dates_str = "\n\n📅 Nouvelles réservations:\n" + "\n".join([f"  • {d}" for d in dates])
+        
         message = f"""
 ✅ OneFlex Bot - Réservations effectuées
 
 - {count} réservation(s) créée(s) avec succès
 - Période: {weeks} semaine(s)
-- Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+- Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}{dates_str}
 """
         logger.info(message)
         

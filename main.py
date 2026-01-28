@@ -197,6 +197,7 @@ class OneFlexBot:
         
         # Réserver chaque date
         stats = {'success': 0, 'failed': 0, 'already_booked': 0}
+        booked_dates = []  # Tracker les nouvelles réservations
         
         for date in dates_to_book:
             date_obj = datetime.combine(date, datetime.min.time())
@@ -213,6 +214,7 @@ class OneFlexBot:
             
             if success:
                 stats['success'] += 1
+                booked_dates.append(date.strftime('%d/%m/%Y'))  # Ajouter la date réservée
             else:
                 # Vérifier si c'est déjà réservé ou une autre erreur
                 stats['already_booked'] += 1
@@ -229,7 +231,7 @@ class OneFlexBot:
         
         # Envoyer notification de succès
         if stats['success'] > 0:
-            notification_service.send_booking_success(stats['success'], weeks_ahead)
+            notification_service.send_booking_success(stats['success'], weeks_ahead, booked_dates)
         
         return stats
     
