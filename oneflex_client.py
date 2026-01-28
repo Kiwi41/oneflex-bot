@@ -108,7 +108,8 @@ class OneFlexClient:
             env_paths = [
                 Path('.env'),
                 Path(__file__).parent / '.env',
-                Path('/app/.env')  # Dans Docker
+                Path('/app/.env'),  # Dans Docker (root)
+                Path('/app/config/.env')  # Dans Docker (volume monté)
             ]
             
             env_file = None
