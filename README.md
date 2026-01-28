@@ -5,9 +5,10 @@ Bot Python pour automatiser la réservation de places de travail sur OneFlex ave
 ## ✨ Fonctionnalités
 
 - ✅ **Connexion SSO** avec authentification par token
+- ✅ **Refresh automatique** des tokens (toutes les ~15 minutes)
 - ✅ **Réservation automatique** de votre bureau favori avec **fallback** si occupé
 - ✅ **Réservation récurrente** par jours de semaine (ex: tous les Lundi/Mercredi/Vendredi)
-- ✅ **Gestion des vacances** : exclusion et annulation automatique des réservations (voir [VACATIONS.md](docs/VACATIONS.md))
+- ✅ **Gestion des vacances** : exclusion et annulation automatique des réservations (voir [VACATIONS.md](VACATIONS.md))
 - ✅ **Planification** des réservations quotidiennes
 - ✅ **Affichage** de vos réservations actuelles
 - ✅ **Réservation pour une date spécifique**
