@@ -31,7 +31,7 @@ echo "✅ Configuration synchronisée"
 
 # Redémarrer le conteneur
 echo "🔄 Redémarrage du conteneur..."
-ssh "${NAS_USER}@${NAS_HOST}" "cd ${NAS_PATH} && docker compose -f docker-compose.ghcr.yml pull && docker compose -f docker-compose.ghcr.yml up -d"
+ssh "${NAS_USER}@${NAS_HOST}" "cd ${NAS_PATH} && sudo docker compose -f docker-compose.ghcr.yml pull && sudo docker compose -f docker-compose.ghcr.yml up -d"
 
 echo ""
 echo "✅ Déploiement terminé!"

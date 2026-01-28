@@ -32,17 +32,17 @@ ssh "${NAS_USER}@${NAS_HOST}" << 'ENDSSH'
     cd /volume1/docker/oneflex || exit 1
     
     echo "📥 Pull de la dernière image depuis GitHub..."
-    docker compose -f docker-compose.ghcr.yml pull
+    sudo docker compose -f docker-compose.ghcr.yml pull
     
     echo "🔄 Redémarrage du conteneur..."
-    docker compose -f docker-compose.ghcr.yml down
-    docker compose -f docker-compose.ghcr.yml up -d
+    sudo docker compose -f docker-compose.ghcr.yml down
+    sudo docker compose -f docker-compose.ghcr.yml up -d
     
     echo "📊 Statut du conteneur:"
-    docker compose -f docker-compose.ghcr.yml ps
+    sudo docker compose -f docker-compose.ghcr.yml ps
     
     echo "📝 Derniers logs:"
-    docker compose -f docker-compose.ghcr.yml logs --tail=10
+    sudo docker compose -f docker-compose.ghcr.yml logs --tail=10
 ENDSSH
 
 echo ""

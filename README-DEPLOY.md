@@ -118,19 +118,19 @@ git push
 
 ```bash
 # Voir les logs en direct
-ssh your_user@192.168.0.191 'cd /volume1/docker/oneflex && docker compose -f docker-compose.ghcr.yml logs -f'
+ssh your_user@192.168.0.191 'cd /volume1/docker/oneflex && sudo docker compose -f docker-compose.ghcr.yml logs -f'
 
 # Statut du conteneur
-ssh your_user@192.168.0.191 'cd /volume1/docker/oneflex && docker compose -f docker-compose.ghcr.yml ps'
+ssh your_user@192.168.0.191 'cd /volume1/docker/oneflex && sudo docker compose -f docker-compose.ghcr.yml ps'
 
 # Redémarrer manuellement
-ssh your_user@192.168.0.191 'cd /volume1/docker/oneflex && docker compose -f docker-compose.ghcr.yml restart'
+ssh your_user@192.168.0.191 'cd /volume1/docker/oneflex && sudo docker compose -f docker-compose.ghcr.yml restart'
 
 # Voir les réservations
-ssh your_user@192.168.0.191 'cd /volume1/docker/oneflex && docker compose -f docker-compose.ghcr.yml exec oneflex-bot python main.py --show'
+ssh your_user@192.168.0.191 'cd /volume1/docker/oneflex && sudo docker compose -f docker-compose.ghcr.yml exec oneflex-bot python main.py --show'
 
 # Mettre à jour l'image
-ssh your_user@192.168.0.191 'cd /volume1/docker/oneflex && docker compose -f docker-compose.ghcr.yml pull && docker compose -f docker-compose.ghcr.yml up -d'
+ssh your_user@192.168.0.191 'cd /volume1/docker/oneflex && sudo docker compose -f docker-compose.ghcr.yml pull && sudo docker compose -f docker-compose.ghcr.yml up -d'
 ```
 
 ## Automatisation avec Git Hooks
