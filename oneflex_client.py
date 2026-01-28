@@ -44,14 +44,13 @@ class OneFlexClient:
 
                 pass
     
-    def _graphql_request(self, query: str, variables: Optional[Dict] = None, retry_on_auth_error: bool = True) -> Optional[Dict]:
+    def _graphql_request(self, query: str, variables: Optional[Dict] = None) -> Optional[Dict]:
         """
-        Exécute une requête GraphQL avec rafraîchissement automatique du token
+        Exécute une requête GraphQL
         
         Args:
             query: Requête GraphQL
             variables: Variables de la requête
-            retry_on_auth_error: Réessayer après rafraîchissement du token si erreur 401
             
         Returns:
             Données de la réponse ou None en cas d'erreur
@@ -63,15 +62,17 @@ class OneFlexClient:
             
             response = self.session.post(self.GQL_ENDPOINT, json=payload)
             
-            # Si erreur 401 et qu'on a un refresh_token, essayer de rafraîchir
-            if response.status_code == 401 and retry_on_auth_error and self.refresh_token:
-                logger.warning("⚠️ Token expiré, tentative de rafraîchissement...")
-                if self.refresh_access_token():
-                    # Réessayer la requête avec le nouveau token
-                    return self._graphql_request(query, variables, retry_on_auth_error=False)
-                else:
-                    logger.error("❌ Impossible de rafraîchir le token")
-                    return None
+            # Si erreur 401, le token est expiré
+            if response.status_code == 401:
+                logger.error("❌ Token invalide ou expiré")
+                if notification_service:
+                    notification_service.send_token_expired_alert(
+                        "🔑 Token OneFlex expiré\n\n"
+                        "Reconnectez-vous avec:\n"
+                        "```\npython auto_get_tokens.py\n```\n"
+                        "Puis redémarrez le bot Docker."
+                    )
+                return None
             
             # Afficher plus de détails en cas d'erreur
             if response.status_code != 200:
@@ -91,69 +92,6 @@ class OneFlexClient:
             logger.error(f"❌ Erreur de requête: {e}")
             return None
     
-    def refresh_access_token(self) -> bool:
-        """
-        Rafraîchit le token d'accès.
-        
-        Note: L'API OneFlex ne supporte pas le refresh automatique.
-        Les tokens doivent être renouvelés manuellement via auto_get_tokens.py
-        
-        Returns:
-            bool: False (le refresh automatique n'est pas supporté)
-        """
-        if notification_service:
-            notification_service.send_token_expired_alert(
-                "🔑 Token OneFlex expiré\n\n"
-                "Reconnectez-vous avec:\n"
-                "```\npython auto_get_tokens.py\n```\n"
-                "Puis redémarrez le bot Docker."
-            )
-        
-        return False
-    
-    def _update_env_token(self, new_token: str):
-        """
-        Met à jour le token dans le fichier .env (config/.env en priorité pour Docker)
-        
-        Args:
-            new_token: Le nouveau token d'accès
-        """
-        try:
-            import os
-            
-            # Essayer d'abord config/.env (utilisé dans Docker)
-            env_paths = [
-                os.path.join(os.path.dirname(__file__), 'config', '.env'),
-                os.path.join(os.path.dirname(__file__), '.env')
-            ]
-            
-            updated_count = 0
-            for env_path in env_paths:
-                if not os.path.exists(env_path):
-                    continue
-                    
-                try:
-                    with open(env_path, 'r') as f:
-                        lines = f.readlines()
-                    
-                    with open(env_path, 'w') as f:
-                        for line in lines:
-                            if line.startswith('ONEFLEX_TOKEN='):
-                                f.write(f'ONEFLEX_TOKEN={new_token}\n')
-                            else:
-                                f.write(line)
-                    
-                    updated_count += 1
-                    logger.debug(f"📝 {env_path} mis à jour")
-                except Exception as e:
-                    logger.debug(f"⚠️ Erreur sur {env_path}: {e}")
-            
-            if updated_count > 0:
-                logger.info(f"📝 Token mis à jour dans {updated_count} fichier(s) .env")
-            
-        except Exception as e:
-            logger.warning(f"⚠️ Impossible de mettre à jour .env: {e}")
-        
     def login(self) -> bool:
         """
         Se connecte à l'API OneFlex via GraphQL

@@ -179,8 +179,8 @@ class OneFlexBot:
             for day_of_week in days_of_week:
                 # Calculer la date
                 days_until = (day_of_week - today.isoweekday()) % 7
-                if days_until == 0 and week == 0:
-                    days_until = 7  # Si c'est aujourd'hui, prendre la semaine prochaine
+                if days_until == 0:
+                    days_until = 7  # Si c'est le même jour, toujours prendre la semaine suivante
                 
                 target_date = today + timedelta(days=days_until + (week * 7))
                 dates_to_book.append(target_date)
