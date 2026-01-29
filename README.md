@@ -1,342 +1,331 @@
-# Bot de Réservation OneFlex
+# 🤖 OneFlex Bot - Guide Complet
 
-Bot Python pour automatiser la réservation de places de travail sur OneFlex avec support SSO.
+Bot d'automatisation des réservations de bureaux sur OneFlex.
 
-## ✨ Fonctionnalités
+## 📁 Structure du Projet
 
-- ✅ **Connexion SSO** avec authentification par token
-- ✅ **Refresh automatique** des tokens (toutes les ~15 minutes)
-- ✅ **Réservation automatique** de votre bureau favori avec **fallback** si occupé
-- ✅ **Réservation récurrente** par jours de semaine (ex: tous les Lundi/Mercredi/Vendredi)
-- ✅ **Gestion des vacances** : exclusion et annulation automatique des réservations (voir [VACATIONS.md](VACATIONS.md))
-- ✅ **Planification** des réservations quotidiennes
-- ✅ **Affichage** de vos réservations actuelles
-- ✅ **Réservation pour une date spécifique**
-- ✅ **Support Docker** pour déploiement sur Synology NAS
-- ✅ **Notifications Discord** pour les événements importants
+```
+oneflex/
+├── src/                      # 📦 Code source principal
+│   ├── main.py              # Point d'entrée du bot
+│   ├── config.py            # Configuration (charge le fichier .env)
+│   ├── oneflex_client.py    # Client API OneFlex (fait les requêtes HTTP)
+│   ├── notifications.py     # Système de notifications Discord
+│   └── vacation_manager.py  # Gestion des congés/absences
+│
+├── scripts/                  # 🔧 Scripts utilitaires
+│   ├── sync_vacations_adp.py    # Synchronise les congés depuis ADP
+│   ├── import_vacations.py      # Importe les congés depuis texte
+│   ├── auto_get_tokens.py       # Récupère automatiquement les tokens
+│   └── deploy-to-nas.sh         # Déploie le bot sur Synology NAS
+│
+├── docs/                     # 📚 Documentation
+│   ├── GUIDE_DEBUTANT.md    # Guide pour les débutants
+│   ├── NOTIFICATIONS.md      # Configuration des notifications
+│   ├── README-DEPLOY.md      # Guide de déploiement
+│   ├── SYNOLOGY.md          # Déploiement sur Synology NAS
+│   ├── GET_TOKEN.md         # Comment obtenir les tokens
+│   ├── VACATIONS.md         # Gestion des congés
+│   └── DOCKER.md            # Utilisation avec Docker
+│
+├── config/                   # ⚙️ Configuration
+│   ├── .env.example         # Exemple de configuration
+│   └── .env                 # Votre configuration (non versionné)
+│
+├── tests/                    # ✅ Tests (à venir)
+│
+├── docker-compose.yml        # Configuration Docker locale
+├── docker-compose.ghcr.yml   # Configuration Docker avec image GitHub
+├── Dockerfile               # Construction de l'image Docker
+├── requirements.txt         # Dépendances Python
+├── CHANGELOG.md            # Historique des versions
+└── README.md               # Ce fichier
+```
 
-## ✅ Gestion des tokens
+## 🚀 Démarrage Rapide
 
-**Bonne nouvelle :** Le bot renouvelle automatiquement les tokens quand ils expirent !
+### Prérequis
 
-Les tokens OneFlex ont une durée de vie courte (~15 minutes), mais grâce au `refresh_token`, 
-le bot les renouvelle automatiquement en arrière-plan. Vous n'avez rien à faire.
+- Python 3.11+ OU Docker
+- Un compte OneFlex
+- (Optionnel) Un webhook Discord pour les notifications
 
-Voir la documentation complète : [TOKEN_MANAGEMENT.md](docs/TOKEN_MANAGEMENT.md)
-
-### Configuration initiale uniquement
-
-Vous devez récupérer vos tokens **une seule fois** lors de l'installation :
+### Installation Locale (sans Docker)
 
 ```bash
-# Méthode simple
-python auto_get_tokens.py
-cp .env config/.env
-docker compose up -d
-```
-
-Après cela, le bot gère tout automatiquement ! ✨
-
-## 📦 Installation
-
-1. Cloner le repository
-2. Installer les dépendances:
-```bash
-pip install -r requirements.txt
-```
-
-3. Configurer vos tokens OneFlex (voir section Configuration)
-
-## ⚙️ Configuration
-
-### 1. Copier le fichier de configuration
-
-```bash
-cp .env.example .env
-```
-
-### 2. Récupérer vos tokens OneFlex
-
-#### Méthode automatique (Recommandée)
-
-Utilisez le script automatisé :
-
-```bash
-python auto_get_tokens.py
-```
-
-Le script va :
-- Ouvrir Chrome automatiquement
-- Attendre que vous vous connectiez via SSO
-- Récupérer automatiquement les tokens
-- Mettre à jour votre `.env` directement
-
-#### Méthode manuelle
-
-Consultez le guide détaillé dans [GET_TOKEN.md](GET_TOKEN.md) ou :
-
-1. Connectez-vous sur https://oneflex.myworldline.com
-2. Ouvrez les outils développeur (F12)
-3. Allez dans **Application** > **Cookies** > `https://oneflex.myworldline.com`
-4. Copiez les valeurs de :
-   - `access_token`
-   - `refresh_token`
-
-### 3. Configurer le fichier .env
-
-Éditez le fichier `.env` :
-
-```bash
-# Tokens d'authentification (requis)
-ONEFLEX_TOKEN=votre_access_token_ici
-ONEFLEX_REFRESH_TOKEN=votre_refresh_token_ici
-
-# Paramètres de réservation (optionnel)
-RESERVATION_TIME=09:00
-RESERVATION_DAYS_AHEAD=7
-```
-
-### Options de configuration
-
-- **ONEFLEX_TOKEN** : Token d'accès (expire après 15 minutes)
-- **ONEFLEX_REFRESH_TOKEN** : Token de rafraîchissement (durée longue) - **Recommandé**
-- **RESERVATION_TIME** : Heure de la réservation automatique quotidienne (format HH:MM, ex: `03:05`)
-- **RESERVATION_DAYS_AHEAD** : Nombre de jours à l'avance pour réserver (par défaut 7)
-- **RESERVATION_DAYS_OF_WEEK** : Jours de la semaine pour réservation récurrente (ex: `1,3,5` pour Lundi, Mercredi, Vendredi)
-  - `1` = Lundi, `2` = Mardi, `3` = Mercredi, `4` = Jeudi, `5` = Vendredi, `6` = Samedi, `7` = Dimanche
-- **RECURRING_WEEKS** : Nombre de semaines à réserver à l'avance en mode `--schedule` (0 = désactivé, défaut 0)
-
-## 🚀 Utilisation
-
-### Réserver automatiquement
-
-Réserve votre bureau favori selon `RESERVATION_DAYS_AHEAD` (7 jours par défaut) :
-
-```bash
-python main.py
-```
-
-### Réserver pour une date spécifique
-
-```bash
-# Réserver pour une date (bloquée si vacances configurées)
-python main.py --date 2026-03-15
-
-# Forcer la réservation même pendant les vacances
-python main.py --date 2026-03-15 --force
-```
-
-**Note** : Si la date est dans une période de vacances configurée (`VACATION_DATES`), la réservation sera bloquée avec un message d'avertissement. Utilisez `--force` pour passer outre.
-
-### Afficher vos réservations
-
-```bash
-python main.py --show
-```
-
-### Réservation récurrente (jours spécifiques)
-
-Réserve automatiquement selon les jours de la semaine configurés dans `RESERVATION_DAYS_OF_WEEK`.
-
-**Configuration dans `.env`** :
-```bash
-# Réserver tous les Lundis, Mercredis et Vendredis
-RESERVATION_DAYS_OF_WEEK=1,3,5
-```
-
-**Exécution** :
-```bash
-# Réserver pour 4 semaines (défaut)
-python main.py --recurring
-
-# Réserver pour 8 semaines
-python main.py --recurring 8
-```
-
-Exemples de configurations :
-- `1,3,5` : Lundi, Mercredi, Vendredi
-- `2,4` : Mardi, Jeudi
-- `1,2,3,4,5` : Tous les jours de la semaine
-
-### Mode automatique quotidien
-
-Lance le bot en mode planifié (s'exécute automatiquement chaque jour à l'heure configurée) :
-
-```bash
-python main.py --schedule
-```
-
-**Mode standard** : Réserve pour J+RESERVATION_DAYS_AHEAD chaque jour
-
-**Mode récurrent** : Si `RECURRING_WEEKS` > 0, réserve automatiquement pour N semaines à l'avance selon les jours configurés dans `RESERVATION_DAYS_OF_WEEK`
-
-**Exemple de configuration pour réservation récurrente** :
-```bash
-RESERVATION_TIME=03:05
-RESERVATION_DAYS_OF_WEEK=1,2,3,4,5  # Lundi à Vendredi
-RECURRING_WEEKS=4  # 4 semaines à l'avance
-```
-
-Avec cette config, le bot va réserver automatiquement les 4 prochaines semaines (20 jours) chaque jour à 3h05.
-
-## 🔄 Rafraîchissement automatique du token
-
-Avec le `ONEFLEX_REFRESH_TOKEN` configuré, le bot :
-- ✅ Détecte automatiquement quand le token expire
-- ✅ Rafraîchit le token d'accès automatiquement
-- ✅ Sauvegarde le nouveau token dans le fichier `.env`
-- ✅ Continue l'exécution sans interruption
-
-**Vous n'avez plus besoin de mettre à jour manuellement le token !**
-
-## 🏖️ Gestion des vacances
-
-Le bot peut automatiquement gérer vos périodes de vacances :
-- 🚫 **Exclure** les jours de vacances des réservations récurrentes
-- 🗑️ **Annuler automatiquement** les réservations existantes pendant vos absences
-- ⚠️ **Bloquer** les réservations manuelles sur des dates en vacances
-
-**Configuration dans `.env`** :
-```bash
-# Périodes de vacances (format: YYYY-MM-DD:YYYY-MM-DD)
-VACATION_DATES=2026-02-10:2026-02-14,2026-04-13:2026-04-24
-
-# Annulation automatique des réservations existantes
-AUTO_CANCEL_VACATIONS=true
-```
-
-📖 **Guide complet** : [VACATIONS.md](VACATIONS.md)
-
-## � Fallback automatique des bureaux
-
-Si votre bureau favori principal est déjà réservé, le bot essaie **automatiquement** vos autres bureaux favoris dans l'ordre de préférence.
-
-### Comment ça fonctionne
-
-Le bot récupère vos bureaux dans cet ordre :
-1. **Bureaux marqués comme favoris** dans OneFlex
-2. **Bureaux les plus réservés** (par ordre décroissant)
-
-### Exemple d'exécution
-
-```
-📌 Bureau favori principal: Bureau COP-0-05 (+2 alternative(s))
-🎯 Essai du bureau principal: Bureau COP-0-05
-⚠️ Bureau occupé, essai du suivant...
-🔄 Essai du bureau alternatif #1: Bureau CP-0-33
-✅ Réservation confirmée!
-```
-
-### Configuration
-
-Aucune configuration nécessaire ! Le bot :
-- ✅ Utilise automatiquement vos favoris OneFlex
-- ✅ Analyse votre historique de réservations
-- ✅ Essaie tous vos bureaux jusqu'à trouver un disponible
-
-**💡 Astuce** : Marquez plusieurs bureaux comme favoris dans OneFlex pour augmenter vos chances de réservation.
-
-## �🐳 Déploiement Docker sur Synology NAS
-
-Le bot peut être déployé sur un NAS Synology avec Docker. Consultez le guide complet : **[SYNOLOGY.md](SYNOLOGY.md)**
-
-### Installation rapide
-
-```bash
-# Cloner le projet sur votre NAS
-git clone https://github.com/Kiwi41/oneflex-bot.git
+# 1. Cloner le repository
+git clone https://github.com/votre-user/oneflex-bot.git
 cd oneflex-bot
 
-# Créer la configuration
-mkdir -p config
-cp .env.example config/.env
-# Éditer config/.env avec vos tokens
+# 2. Créer un environnement virtuel Python
+python -m venv .venv
+source .venv/bin/activate  # Linux/Mac
+# OU
+.venv\Scripts\activate     # Windows
 
-# Lancer avec Docker Compose
-docker-compose up -d
+# 3. Installer les dépendances
+pip install -r requirements.txt
+
+# 4. Configurer
+cp config/.env.example config/.env
+nano config/.env  # Éditez avec vos paramètres
+
+# 5. Obtenir votre token OneFlex
+# Suivez le guide: docs/GET_TOKEN.md
+
+# 6. Lancer le bot
+python src/main.py --schedule
 ```
 
-## 🤖 Automatisation avec Cron
-
-Pour exécuter le bot automatiquement chaque jour :
+### Installation avec Docker
 
 ```bash
-crontab -e
+# 1. Cloner et configurer
+git clone https://github.com/votre-user/oneflex-bot.git
+cd oneflex-bot
+cp config/.env.example config/.env
+nano config/.env  # Éditez avec vos paramètres
+
+# 2. Démarrer avec Docker Compose
+docker compose up -d
+
+# 3. Voir les logs
+docker logs -f oneflex-bot
 ```
 
-Ajoutez cette ligne (exemple : exécution à 9h du matin) :
+## 📖 Guide de Configuration
 
-```cron
-0 9 * * * cd /home/a154355/git/perso/oneflex && .venv/bin/python main.py
-```
-
-Ou utilisez le mode `--schedule` :
+### Fichier `.env` - Les Essentiels
 
 ```bash
-# Lancer en arrière-plan avec nohup
-nohup python main.py --schedule > bot.log 2>&1 &
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# OBLIGATOIRE : Token OneFlex
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ONEFLEX_TOKEN=votre_token_ici
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# Horaires (format HH:MM)
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+RESERVATION_TIME=03:05        # Heure de réservation automatique
+REMINDER_TIME=08:00           # Heure du rappel matinal (vide = désactivé)
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# Réservation
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+RECURRING_WEEKS=4             # Nombre de semaines à réserver d'avance
+RESERVATION_DAYS_OF_WEEK=1,2,3,4,5  # Lundi à vendredi
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# Notifications Discord (optionnel)
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+NOTIFICATION_WEBHOOK_URL=https://discord.com/api/webhooks/...
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# Congés (géré automatiquement par sync_vacations_adp.py)
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+VACATION_DATES=2026-02-10:2026-02-14,2026-03-01
+AUTO_CANCEL_VACATIONS=true   # Annule automatiquement les réservations pendant les congés
 ```
 
-## 📋 Exemples d'utilisation
+### Modes d'Exécution
 
-### Réserver pour demain
 ```bash
-python main.py --date $(date -d "+1 day" +%Y-%m-%d)
+# Mode 1: Exécution planifiée (bot continu)
+# Le bot tourne en permanence et exécute la réservation à RESERVATION_TIME
+python src/main.py --schedule
+
+# Mode 2: Réservation unique pour une date
+# Réserve seulement pour le 15 février 2026 puis s'arrête
+python src/main.py --date 2026-02-15
+
+# Mode 3: Réservation récurrente immédiate
+# Réserve RECURRING_WEEKS semaines d'avance puis s'arrête
+python src/main.py --recurring
+
+# Mode 4: Forcer une réservation même si déjà existante
+python src/main.py --date 2026-02-15 --force
 ```
 
-### Réserver pour toute la semaine prochaine
+## 🛠️ Scripts Utilitaires
+
+### 1. Synchronisation des Congés depuis ADP
+
 ```bash
-for i in {1..5}; do
-  python main.py --date $(date -d "+$i day" +%Y-%m-%d)
-done
+# Première utilisation : sauvegarder le cookie ADP
+python scripts/sync_vacations_adp.py --cookie "votre_cookie" --save-cookie
+
+# Utilisations suivantes : le cookie est automatiquement lu depuis .adp_cookie
+python scripts/sync_vacations_adp.py
+
+# Le script met à jour automatiquement VACATION_DATES dans config/.env
 ```
 
-### Vérifier mes réservations
+**Comment obtenir le cookie ADP :**
+1. Ouvrez https://mon.adp.com dans Chrome
+2. F12 → Onglet "Application" → Cookies → https://mon.adp.com
+3. Trouvez `EMEASMSESSION` et copiez la valeur
+
+### 2. Import Manuel des Congés (depuis texte)
+
 ```bash
-python main.py --show
+# Si vous avez copié le texte depuis le portail RH dans un fichier
+python scripts/import_vacations.py < mes_conges.txt
 ```
 
-## 🔧 Bureau favori
+### 3. Obtention Automatique des Tokens
 
-Le bot identifie automatiquement votre bureau favori en analysant vos réservations passées :
-- Il sélectionne le bureau que vous avez réservé le plus souvent
-- Si vous avez configuré des bureaux favoris dans OneFlex, il les utilise en priorité
-
-Pour forcer un bureau spécifique, ajoutez dans `.env` :
 ```bash
-ONEFLEX_DESK_ID=edbb6ebe-ff94-4322-bf0c-b02bebad7ec7
-ONEFLEX_SPACE_ID=cd973815-041c-4a53-bf1d-f1b4582e4c3d
-ONEFLEX_DESK_NAME=Mon bureau préféré
+# Ouvre un navigateur automatique pour récupérer les tokens
+python scripts/auto_get_tokens.py
 ```
 
-## 📝 Notes
+## 📊 Notifications Discord
 
-- Le bot réserve automatiquement pour **toute la journée** (matin + après-midi)
-- Si vous avez déjà une réservation pour la date demandée, le bot détectera le conflit
-- Le `refresh_token` a une durée de vie longue mais peut aussi expirer (plusieurs jours/semaines)
+Le bot envoie 3 types de notifications :
 
-## 🐛 Dépannage
+### 1. ✅ Réservation Réussie
+```
+✅ OneFlex Bot - Réservation confirmée
 
-### "Token invalide ou expiré"
+📅 Lundi 15 février 2026
+🏢 Bureau : Desk-A-123
+📍 Espace : Open Space Nord - Zone A
+⏰ Moment : Journée complète (09:00 - 18:00)
+```
 
-1. Vérifiez que votre `ONEFLEX_REFRESH_TOKEN` est configuré
-2. Si le problème persiste, reconnectez-vous sur OneFlex et récupérez de nouveaux tokens
+### 2. ☀️ Rappel Matinal
+```
+☀️ Bonjour ! Votre bureau aujourd'hui
 
-### "Impossible de trouver un bureau favori"
+📅 Lundi 15 février 2026
+🏢 Bureau : Desk-A-123
+📍 Espace : Open Space Nord - Zone A
+⏰ Moment : Journée complète
+```
 
-1. Assurez-vous d'avoir déjà fait des réservations sur OneFlex
-2. Ou configurez manuellement `ONEFLEX_DESK_ID` et `ONEFLEX_SPACE_ID` dans `.env`
+### 3. 🏝️ Congés Annulés
+```
+🏝️ OneFlex Bot - Réservations annulées
 
-### Le bot ne se lance pas automatiquement
+Les réservations suivantes ont été annulées :
 
-1. Vérifiez votre configuration cron : `crontab -l`
-2. Vérifiez les logs : consultez le fichier `bot.log` si vous utilisez nohup
-3. Testez la commande manuellement d'abord
+📅 10/02/2026 - Matin, Après-midi
+📅 11/02/2026 - Matin, Après-midi
+📅 12/02/2026 - Matin, Après-midi
 
-## 📄 Licence
+Bonnes vacances ! 🌴
+```
 
-Ce bot est un projet personnel et n'est pas affilié à OneFlex ou Worldline.
+## 🔍 Comprendre le Code
 
-## ⚠️ Avertissement
+### Architecture Simplifiée
 
-Utilisez ce bot de manière responsable et conformément aux politiques de votre entreprise concernant l'automatisation des réservations.
+```
+┌─────────────────────────────────────────────────────┐
+│                   src/main.py                       │
+│            (Point d'entrée principal)               │
+│  - Parse les arguments (--schedule, --date, etc.)  │
+│  - Lance le bot selon le mode choisi               │
+└───────────────┬────────────────────────────────────┘
+                │
+                ├──► src/config.py
+                │    (Charge les variables depuis .env)
+                │
+                ├──► src/oneflex_client.py
+                │    (Communique avec l'API OneFlex)
+                │    - get_available_desks()
+                │    - book_desk()
+                │    - cancel_booking()
+                │
+                ├──► src/notifications.py
+                │    (Envoie les messages Discord)
+                │    - send_success()
+                │    - send_daily_reminder()
+                │
+                └──► src/vacation_manager.py
+                     (Gère les périodes de congés)
+                     - is_vacation()
+                     - cancel_vacation_bookings()
+```
+
+### Flux d'Exécution Typique
+
+```
+1. Le bot démarre à RESERVATION_TIME (ex: 03:05)
+   ↓
+2. Calcule la date cible (aujourd'hui + RESERVATION_DAYS_AHEAD)
+   ↓
+3. Vérifie si c'est un jour de congé (VACATION_DATES)
+   ↓
+4. Cherche les bureaux disponibles (oneflex_client.get_available_desks)
+   ↓
+5. Réserve le premier bureau trouvé (oneflex_client.book_desk)
+   ↓
+6. Envoie une notification Discord ✅
+   ↓
+7. À REMINDER_TIME (ex: 08:00), envoie un rappel ☀️
+```
+
+## 🐛 Résolution de Problèmes
+
+### Token Expiré
+
+```bash
+# Erreur : "Authentication failed" ou "401 Unauthorized"
+# Solution : Obtenir un nouveau token
+
+python scripts/auto_get_tokens.py
+# OU manuellement suivez docs/GET_TOKEN.md
+```
+
+### Aucun Bureau Disponible
+
+```bash
+# Le bot ne trouve pas de bureau disponible
+# Causes possibles :
+# - Tous les bureaux sont réservés (arrivez plus tôt)
+# - Mauvaise configuration des filtres (SITE_ID, FLOOR_ID)
+# - Token expiré
+
+# Solution : Vérifier les logs
+docker logs oneflex-bot
+```
+
+### Cookie ADP Expiré
+
+```bash
+# Le script sync_vacations_adp.py retourne une erreur 401
+# Solution : Obtenir un nouveau cookie
+
+python scripts/sync_vacations_adp.py --cookie "nouveau_cookie" --save-cookie
+```
+
+## 📚 Documentation Complète
+
+- [Guide Débutant](docs/GUIDE_DEBUTANT.md) - Pour bien démarrer
+- [Obtenir le Token](docs/GET_TOKEN.md) - Comment récupérer le token OneFlex
+- [Notifications](docs/NOTIFICATIONS.md) - Configuration Discord
+- [Gestion des Congés](docs/VACATIONS.md) - Synchronisation ADP
+- [Déploiement](docs/README-DEPLOY.md) - Options de déploiement
+- [Synology NAS](docs/SYNOLOGY.md) - Installation sur NAS
+- [Docker](docs/DOCKER.md) - Utilisation avancée de Docker
+
+## 🤝 Contribution
+
+Les contributions sont bienvenues ! N'hésitez pas à :
+- 🐛 Signaler des bugs
+- 💡 Proposer des améliorations
+- 📖 Améliorer la documentation
+
+## 📜 Licence
+
+MIT License - Voir [LICENSE](LICENSE)
+
+## 🙏 Crédits
+
+Développé avec ❤️ pour automatiser les réservations OneFlex.
+
+---
+
+**Version actuelle :** 1.9.0  
+**Dernière mise à jour :** Janvier 2026

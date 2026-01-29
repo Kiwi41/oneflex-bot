@@ -19,4 +19,4 @@ services:
     # Pour exécution quotidienne automatique à RESERVATION_TIME (3h05), utilisez --schedule
     # Alternatives : --schedule (bot continu) ou --date YYYY-MM-DD (réservation unique)
     # Commenter cette ligne si vous ne souhaitez pas démarrer le bot automatiquement
-    command: python main.py --schedule
+    command: python src/main.py --schedule

@@ -2,6 +2,7 @@
 .env
 .env.secrets
 secrets/
+.adp_cookie
 
 # Python
 __pycache__/
