@@ -151,19 +151,27 @@ python src/main.py --date 2026-02-15 --force
 ### 1. Synchronisation des Congés depuis ADP
 
 ```bash
-# Première utilisation : sauvegarder le cookie ADP
-python scripts/sync_vacations_adp.py --cookie "votre_cookie" --save-cookie
+# Première utilisation : sauvegarder le cookie et worker ID ADP
+python scripts/sync_vacations_adp.py \
+  --cookie "votre_cookie" \
+  --worker-id "votre_id" \
+  --save-config
 
-# Utilisations suivantes : le cookie est automatiquement lu depuis .adp_cookie
+# Utilisations suivantes : la config est automatiquement lue depuis .adp_config
 python scripts/sync_vacations_adp.py
 
 # Le script met à jour automatiquement VACATION_DATES dans config/.env
 ```
 
-**Comment obtenir le cookie ADP :**
-1. Ouvrez https://mon.adp.com dans Chrome
-2. F12 → Onglet "Application" → Cookies → https://mon.adp.com
-3. Trouvez `EMEASMSESSION` et copiez la valeur
+**Comment obtenir vos paramètres ADP :**
+
+1. **Cookie** : Ouvrez https://mon.adp.com dans Chrome
+   - F12 → Onglet "Application" → Cookies → https://mon.adp.com
+   - Trouvez `EMEASMSESSION` et copiez la valeur
+
+2. **Worker ID** : Trouvez votre ID dans l'URL de votre profil ADP
+   - Exemple : `https://mon.adp.com/.../workers/kfavry-jm3/...`
+   - L'ID est `kfavry-jm3`
 
 ### 2. Import Manuel des Congés (depuis texte)
 
@@ -297,7 +305,9 @@ docker logs oneflex-bot
 # Le script sync_vacations_adp.py retourne une erreur 401
 # Solution : Obtenir un nouveau cookie
 
-python scripts/sync_vacations_adp.py --cookie "nouveau_cookie" --save-cookie
+python scripts/sync_vacations_adp.py \
+  --cookie "nouveau_cookie" \
+  --save-config
 ```
 
 ## 📚 Documentation Complète

@@ -393,14 +393,14 @@ Les tokens sont **secrets** et ne doivent **jamais** être committés dans Git.
 ```bash
 # .gitignore
 .env            # Ne JAMAIS versionner les secrets
-.adp_cookie     # Ne JAMAIS versionner les cookies
+.adp_config     # Ne JAMAIS versionner la config ADP
 config/.env     # Ne JAMAIS versionner la config
 ```
 
 **Stockage sécurisé :**
 - Les tokens sont dans `config/.env` (ignoré par Git)
 - Le fichier `.env.example` montre la structure sans secrets
-- Les cookies ADP sont dans `.adp_cookie` avec permissions `600` (lecture propriétaire seulement)
+- La config ADP (cookie + worker ID) est dans `.adp_config` avec permissions `600`
 
 ### Expiration des Tokens
 

@@ -21,10 +21,18 @@ Le moyen le plus simple et fiable pour gérer vos congés est d'utiliser le scri
 # F12 → Application → Cookies → https://mon.adp.com
 # Copiez la valeur de 'EMEASMSESSION'
 
-# 2. Sauvegarder le cookie (une seule fois)
-python scripts/sync_vacations_adp.py --cookie "votre_cookie_ici" --save-cookie
+# 2. Obtenir votre Worker ID
+# Trouvez votre ID dans l'URL de votre profil ADP
+# Exemple: https://mon.adp.com/.../workers/kfavry-jm3/...
+# L'ID est: kfavry-jm3
 
-# ✅ Cookie sauvegardé dans .adp_cookie
+# 3. Sauvegarder la configuration (une seule fois)
+python scripts/sync_vacations_adp.py \
+  --cookie "votre_cookie_ici" \
+  --worker-id "votre_id_ici" \
+  --save-config
+
+# ✅ Configuration sauvegardée dans .adp_config
 ```
 
 #### Utilisation
@@ -81,7 +89,7 @@ Pour mettre à jour le cookie EMEASMSESSION:
   2. Connectez-vous si nécessaire
   3. F12 > Application > Cookies > https://mon.adp.com
   4. Copiez la valeur de 'EMEASMSESSION'
-  5. Relancez: python scripts/sync_vacations_adp.py --cookie 'nouveau_cookie' --save-cookie
+  5. Relancez: python scripts/sync_vacations_adp.py --cookie 'nouveau_cookie' --save-config
 ```
 
 #### Automatisation
