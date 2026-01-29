@@ -20,41 +20,90 @@ from pathlib import Path
 from typing import List, Tuple, Optional
 
 
-def get_cookie_from_file(cookie_file: Path = Path('.adp_cookie')) -> Optional[str]:
+def read_adp_config(config_file: Path = Path('.adp_config')) -> dict:
     """
-    Lit le cookie depuis un fichier
+    Lit la configuration ADP depuis le fichier
     
     Args:
-        cookie_file: Chemin vers le fichier contenant le cookie
+        config_file: Chemin vers le fichier de config
         
     Returns:
-        Le cookie ou None si le fichier n'existe pas
+        Dictionnaire avec 'cookie' et 'worker_id' (ou None si absents)
     """
-    if not cookie_file.exists():
-        return None
+    config = {'cookie': None, 'worker_id': None}
     
-    with open(cookie_file, 'r') as f:
-        cookie = f.read().strip()
-        return cookie if cookie else None
+    if not config_file.exists():
+        return config
+    
+    with open(config_file, 'r') as f:
+        for line in f:
+            line = line.strip()
+            # Ignorer les commentaires et lignes vides
+            if line and not line.startswith('#'):
+                if '=' in line:
+                    key, value = line.split('=', 1)
+                    key = key.strip()
+                    value = value.strip()
+                    
+                    if key == 'ADP_SESSION_COOKIE':
+                        config['cookie'] = value
+                    elif key == 'ADP_WORKER_ID':
+                        config['worker_id'] = value
+    
+    return config
 
 
-def save_cookie_to_file(cookie: str, cookie_file: Path = Path('.adp_cookie')):
+def save_adp_config(cookie: Optional[str] = None, worker_id: Optional[str] = None, 
+                    config_file: Path = Path('.adp_config')):
     """
-    Sauvegarde le cookie dans un fichier
+    Sauvegarde la configuration ADP dans le fichier
     
     Args:
-        cookie: Le cookie à sauvegarder
-        cookie_file: Chemin vers le fichier
+        cookie: Le cookie de session (optionnel)
+        worker_id: L'ID du travailleur (optionnel)
+        config_file: Chemin vers le fichier
     """
-    with open(cookie_file, 'w') as f:
-        f.write(cookie)
+    # Lire la config existante si le fichier existe
+    existing_config = read_adp_config(config_file) if config_file.exists() else {'cookie': None, 'worker_id': None}
     
-    # Sécuriser le fichier (lecture/écriture propriétaire uniquement)
-    os.chmod(cookie_file, 0o600)
-    print(f"✅ Cookie sauvegardé dans {cookie_file}")
+    # Mettre à jour avec les nouvelles valeurs si fournies
+    if cookie is not None:
+        existing_config['cookie'] = cookie
+    if worker_id is not None:
+        existing_config['worker_id'] = worker_id
+    
+    # Écrire le fichier
+    with open(config_file, 'w') as f:
+        f.write("# Configuration ADP pour sync_vacations_adp.py\n")
+        f.write("# Ce fichier est indépendant de la configuration du bot OneFlex\n")
+        f.write("\n")
+        f.write("# Cookie de session ADP (EMEASMSESSION)\n")
+        f.write("# Obtention: Chrome DevTools (F12) > Application > Cookies > https://mon.adp.com\n")
+        if existing_config['cookie']:
+            f.write(f"ADP_SESSION_COOKIE={existing_config['cookie']}\n")
+        else:
+            f.write("# ADP_SESSION_COOKIE=votre_cookie_ici\n")
+        f.write("\n")
+        f.write("# ID du travailleur ADP\n")
+        f.write("# Trouvez votre ID dans l'URL: https://mon.adp.com/.../workers/VOTRE_ID/...\n")
+        if existing_config['worker_id']:
+            f.write(f"ADP_WORKER_ID={existing_config['worker_id']}\n")
+        else:
+            f.write("# ADP_WORKER_ID=votre_worker_id_ici\n")
+    
+    os.chmod(config_file, 0o600)
+    
+    saved_items = []
+    if cookie is not None:
+        saved_items.append("cookie")
+    if worker_id is not None:
+        saved_items.append("worker ID")
+    
+    if saved_items:
+        print(f"✅ {' et '.join(saved_items)} sauvegardé(s) dans {config_file}")
 
 
-def get_adp_vacations(session_cookie: str, worker_id: str = "kfavry-jm3") -> List[dict]:
+def get_adp_vacations(session_cookie: str, worker_id: str) -> List[dict]:
     """
     Récupère les congés depuis l'API ADP
     
@@ -203,35 +252,40 @@ def update_env_file(vacation_string: str, env_path: Path = Path('config/.env')) 
 def main():
     parser = argparse.ArgumentParser(description='Synchronise les congés depuis l\'API ADP')
     parser.add_argument('--cookie', help='Cookie de session EMEASMSESSION')
-    parser.add_argument('--cookie-file', default='.adp_cookie', help='Fichier contenant le cookie (défaut: .adp_cookie)')
-    parser.add_argument('--save-cookie', action='store_true', help='Sauvegarder le cookie dans le fichier')
-    parser.add_argument('--worker-id', default='kfavry-jm3', help='ID du travailleur ADP')
+    parser.add_argument('--worker-id', help='ID du travailleur ADP (ex: kfavry-jm3)')
+    parser.add_argument('--save-config', action='store_true', help='Sauvegarder cookie et/ou worker ID dans .adp_config')
+    parser.add_argument('--config-file', default='.adp_config', help='Fichier de configuration (défaut: .adp_config)')
     args = parser.parse_args()
     
-    cookie_file = Path(args.cookie_file)
+    config_file = Path(args.config_file)
     
     print("🔄 Synchronisation des congés depuis ADP")
     print("=" * 50)
     print()
     
-    # Récupérer le cookie (priorité: argument > fichier > env var)
-    session_cookie = args.cookie or get_cookie_from_file(cookie_file) or os.getenv('ADP_SESSION_COOKIE')
+    # Lire la configuration existante
+    adp_config = read_adp_config(config_file)
     
-    # Sauvegarder le cookie si demandé
-    if args.save_cookie and args.cookie:
-        save_cookie_to_file(args.cookie, cookie_file)
+    # Récupérer le cookie (priorité: argument > fichier config > env var)
+    session_cookie = args.cookie or adp_config['cookie'] or os.getenv('ADP_SESSION_COOKIE')
+    
+    # Récupérer le worker ID (priorité: argument > fichier config > env var)
+    worker_id = args.worker_id or adp_config['worker_id'] or os.getenv('ADP_WORKER_ID')
+    
+    # Sauvegarder la config si demandé
+    if args.save_config and (args.cookie or args.worker_id):
+        save_adp_config(cookie=args.cookie, worker_id=args.worker_id, config_file=config_file)
         print()
     
     if not session_cookie:
         print("❌ Cookie de session manquant")
         print()
-        print("Méthode recommandée (sauvegarde dans fichier):")
-        print("  python sync_vacations_adp.py --cookie 'votre_cookie' --save-cookie")
+        print("Méthode recommandée:")
+        print("  python sync_vacations_adp.py --cookie 'votre_cookie' --save-config")
         print()
         print("Autres méthodes:")
-        print("  1. Créez le fichier .adp_cookie avec votre cookie")
+        print("  1. Ajoutez ADP_SESSION_COOKIE=... dans .adp_config")
         print("  2. export ADP_SESSION_COOKIE='votre_cookie'")
-        print("  3. python sync_vacations_adp.py --cookie 'votre_cookie'")
         print()
         print("Pour obtenir le cookie:")
         print("  1. Ouvrez https://mon.adp.com dans Chrome")
@@ -239,10 +293,27 @@ def main():
         print("  3. Copiez la valeur de 'EMEASMSESSION'")
         return 1
     
+    if not worker_id:
+        print("❌ Worker ID ADP manquant")
+        print()
+        print("Méthode recommandée:")
+        print("  python sync_vacations_adp.py --worker-id 'votre_id' --save-config")
+        print()
+        print("Autres méthodes:")
+        print("  1. Ajoutez ADP_WORKER_ID=... dans .adp_config")
+        print("  2. export ADP_WORKER_ID='votre_id'")
+        print()
+        print("Pour trouver votre ID:")
+        print("  1. Connectez-vous sur https://mon.adp.com")
+        print("  2. L'URL de votre profil contient: /workers/VOTRE_ID/")
+        print("  Exemple: https://mon.adp.com/.../workers/kfavry-jm3/...")
+        return 1
+    
     try:
         # Récupérer les congés depuis l'API
         print("📡 Connexion à l'API ADP...")
-        time_off_requests = get_adp_vacations(session_cookie, args.worker_id)
+        print(f"   Worker ID: {worker_id}")
+        time_off_requests = get_adp_vacations(session_cookie, worker_id)
         print(f"✅ {len(time_off_requests)} demande(s) de congé(s) récupérée(s)")
         print()
         

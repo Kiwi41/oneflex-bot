@@ -3,6 +3,7 @@
 .env.secrets
 secrets/
 .adp_cookie
+.adp_config
 
 # Python
 __pycache__/

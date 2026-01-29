@@ -1,0 +1,11 @@
+# Configuration ADP pour sync_vacations_adp.py
+# Ce fichier est indépendant de la configuration du bot OneFlex
+
+# Cookie de session ADP (EMEASMSESSION)
+# Obtention: Chrome DevTools (F12) > Application > Cookies > https://mon.adp.com
+# ADP_SESSION_COOKIE=votre_cookie_ici
+
+# ID du travailleur ADP
+# Trouvez votre ID dans l'URL de votre profil ADP
+# Exemple: https://mon.adp.com/.../workers/kfavry-jm3/...
+# ADP_WORKER_ID=votre_worker_id_ici
