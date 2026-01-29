@@ -304,6 +304,7 @@ class OneFlexBot:
         logger.info(f"📋 {len(to_cancel)} réservation(s) à annuler:")
         
         cancelled_count = 0
+        cancelled_list = []
         for booking in to_cancel:
             date = booking.get('date')
             moment = booking.get('moment', '')
@@ -315,8 +316,13 @@ class OneFlexBot:
             
             if booking_id and self.client.cancel_booking(booking_id):
                 cancelled_count += 1
+                cancelled_list.append(booking)
         
         logger.info(f"\n✅ {cancelled_count}/{len(to_cancel)} réservation(s) annulée(s)\n")
+        
+        # Envoyer une notification si des réservations ont été annulées
+        if cancelled_list:
+            notification_service.send_vacation_cancellation(cancelled_list)
     
     def schedule_daily_booking(self):
         """Configure une réservation automatique quotidienne"""

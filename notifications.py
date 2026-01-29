@@ -123,6 +123,47 @@ Bonne journée ! 🎯
         if self.webhook_url:
             self._send_webhook(message, is_success=True)
     
+    def send_vacation_cancellation(self, cancelled_bookings: list):
+        """Notification d'annulation de réservations pour les vacances"""
+        if not cancelled_bookings:
+            return
+        
+        # Grouper par date
+        from collections import defaultdict
+        by_date = defaultdict(list)
+        for booking in cancelled_bookings:
+            date = booking.get('date')
+            moment = booking.get('moment', '')
+            by_date[date].append(moment)
+        
+        # Formater la liste des dates
+        dates_text = ""
+        for date in sorted(by_date.keys()):
+            moments = by_date[date]
+            from datetime import datetime
+            date_obj = datetime.strptime(date, '%Y-%m-%d')
+            date_formatted = date_obj.strftime('%d/%m/%Y')
+            
+            moment_icons = []
+            if 'MORNING' in moments:
+                moment_icons.append('🌅 Matin')
+            if 'AFTERNOON' in moments:
+                moment_icons.append('🌆 Après-midi')
+            
+            moments_str = ' + '.join(moment_icons)
+            dates_text += f"\n  • {date_formatted} ({moments_str})"
+        
+        message = f"""
+🏝️ OneFlex Bot - Réservations annulées
+
+{len(cancelled_bookings)} réservation(s) annulée(s) pour vos congés :{dates_text}
+
+Bonnes vacances ! ☀️
+"""
+        
+        if self.webhook_url:
+            self._send_webhook(message, is_success=False)
+    
     def _send_webhook(self, message: str, is_success: bool = False, is_error: bool = False):
         """Envoie une notification via webhook"""
         try:
