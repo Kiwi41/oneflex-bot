@@ -3,8 +3,101 @@
 Le bot OneFlex peut automatiquement gérer vos périodes de vacances :
 - **Ne pas réserver** pendant vos absences
 - **Annuler automatiquement** les réservations existantes pendant vos vacances
+- **Synchroniser automatiquement** vos congés depuis l'API ADP
 
-## 📝 Configuration
+---
+
+## 🚀 Méthode Recommandée : Synchronisation ADP Automatique
+
+### Script `sync_vacations_adp.py`
+
+Le moyen le plus simple et fiable pour gérer vos congés est d'utiliser le script de synchronisation ADP qui récupère directement vos congés depuis votre portail RH.
+
+#### Installation Initiale
+
+```bash
+# 1. Obtenir votre cookie de session ADP
+# Ouvrez https://mon.adp.com dans Chrome
+# F12 → Application → Cookies → https://mon.adp.com
+# Copiez la valeur de 'EMEASMSESSION'
+
+# 2. Sauvegarder le cookie (une seule fois)
+python scripts/sync_vacations_adp.py --cookie "votre_cookie_ici" --save-cookie
+
+# ✅ Cookie sauvegardé dans .adp_cookie
+```
+
+#### Utilisation
+
+```bash
+# Lancer la synchronisation
+python scripts/sync_vacations_adp.py
+```
+
+**Résultat :**
+```
+🔄 Synchronisation des congés depuis ADP
+==================================================
+
+📡 Connexion à l'API ADP...
+✅ 74 demande(s) de congé(s) récupérée(s)
+
+🔍 Filtrage des congés approuvés...
+✅ 66 période(s) approuvée(s):
+
+  • 30/01/2025 → 31/01/2025
+  • 05/02/2025
+  • 13/02/2025 → 21/02/2025
+  ...
+
+📝 Format pour le bot:
+  VACATION_DATES=2025-01-30:2025-01-31,2025-02-05,...
+
+💾 Mise à jour de config/.env...
+✅ config/.env mis à jour avec succès!
+
+🚀 Prochaines étapes:
+  1. Redémarrez le bot: docker compose restart
+  2. Ou attendez la prochaine exécution automatique
+```
+
+#### Avantages
+
+- ✅ **Automatique** : Récupère tous vos congés approuvés
+- ✅ **À jour** : Synchronise depuis la source officielle
+- ✅ **Fiable** : Format JSON structuré (pas de copier-coller)
+- ✅ **Complet** : Toutes les périodes en une commande
+
+#### Cookie Expiré ?
+
+Si vous obtenez une erreur 401 :
+
+```bash
+# Le script vous guidera :
+❌ Session expirée - Cookie invalide ou expiré
+
+Pour mettre à jour le cookie EMEASMSESSION:
+  1. Ouvrez https://mon.adp.com dans Chrome
+  2. Connectez-vous si nécessaire
+  3. F12 > Application > Cookies > https://mon.adp.com
+  4. Copiez la valeur de 'EMEASMSESSION'
+  5. Relancez: python scripts/sync_vacations_adp.py --cookie 'nouveau_cookie' --save-cookie
+```
+
+#### Automatisation
+
+Vous pouvez ajouter un cron pour synchroniser automatiquement :
+
+```bash
+# Synchroniser tous les lundis à 8h
+0 8 * * 1 cd /chemin/oneflex && python scripts/sync_vacations_adp.py && docker compose restart
+```
+
+---
+
+## 📝 Méthode Alternative : Configuration Manuelle
+
+Si vous ne pouvez pas utiliser l'API ADP, vous pouvez configurer manuellement.
 
 ### Format des dates
 
@@ -39,6 +132,33 @@ AUTO_CANCEL_VACATIONS=true
 # Ne pas annuler (juste éviter de nouvelles réservations)
 AUTO_CANCEL_VACATIONS=false
 ```
+
+---
+
+## 🛠️ Import depuis Texte (Méthode Manuelle Alternative)
+
+Si vous avez copié le texte depuis le portail RH :
+
+```bash
+# 1. Copiez le texte des congés dans un fichier
+nano mes_conges.txt
+
+# 2. Lancez l'import
+python scripts/import_vacations.py < mes_conges.txt
+```
+
+**Format du texte attendu :**
+```
+Type de congé: RTT salarié
+Période: Du 30 octobre 2025 Au 31 octobre 2025
+Statut: Approuvé
+
+Type de congé: RTT salarié
+Date: 3 novembre 2025
+Statut: Approuvé
+```
+
+Le script parse automatiquement les dates françaises et met à jour `config/.env`.
 
 ---
 
