@@ -369,6 +369,7 @@ class OneFlexBot:
 def main():
     """Point d'entrée principal"""
     import sys
+    from datetime import datetime, timedelta
     
     bot = OneFlexBot()
     
@@ -381,7 +382,6 @@ def main():
             success, already_existed = result
             if success and not already_existed:
                 # Nouvelle réservation créée
-                from datetime import datetime, timedelta
                 date = (datetime.now() + timedelta(days=Config.RESERVATION_DAYS_AHEAD)).strftime('%d/%m/%Y')
                 notification_service.send_booking_success(1, 1, [date])
         
