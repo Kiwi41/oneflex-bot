@@ -252,7 +252,7 @@ def update_env_file(vacation_string: str, env_path: Path = Path('config/.env')) 
 def main():
     parser = argparse.ArgumentParser(description='Synchronise les congés depuis l\'API ADP')
     parser.add_argument('--cookie', help='Cookie de session EMEASMSESSION')
-    parser.add_argument('--worker-id', help='ID du travailleur ADP (ex: kfavry-jm3)')
+    parser.add_argument('--worker-id', help='ID du travailleur ADP (ex: jdupont-abc)')
     parser.add_argument('--save-config', action='store_true', help='Sauvegarder cookie et/ou worker ID dans .adp_config')
     parser.add_argument('--config-file', default='.adp_config', help='Fichier de configuration (défaut: .adp_config)')
     args = parser.parse_args()
@@ -306,7 +306,7 @@ def main():
         print("Pour trouver votre ID:")
         print("  1. Connectez-vous sur https://mon.adp.com")
         print("  2. L'URL de votre profil contient: /workers/VOTRE_ID/")
-        print("  Exemple: https://mon.adp.com/.../workers/kfavry-jm3/...")
+        print("  Exemple: https://mon.adp.com/.../workers/jdupont-abc/...")
         return 1
     
     try:

@@ -23,8 +23,8 @@ Le moyen le plus simple et fiable pour gérer vos congés est d'utiliser le scri
 
 # 2. Obtenir votre Worker ID
 # Trouvez votre ID dans l'URL de votre profil ADP
-# Exemple: https://mon.adp.com/.../workers/kfavry-jm3/...
-# L'ID est: kfavry-jm3
+# Exemple: https://mon.adp.com/.../workers/jdupont-abc/...
+# L'ID est: jdupont-abc
 
 # 3. Sauvegarder la configuration (une seule fois)
 python scripts/sync_vacations_adp.py \

@@ -7,5 +7,5 @@
 
 # ID du travailleur ADP
 # Trouvez votre ID dans l'URL de votre profil ADP
-# Exemple: https://mon.adp.com/.../workers/kfavry-jm3/...
+# Exemple: https://mon.adp.com/.../workers/jdupont-abc/...
 # ADP_WORKER_ID=votre_worker_id_ici

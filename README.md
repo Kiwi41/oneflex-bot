@@ -170,8 +170,8 @@ python scripts/sync_vacations_adp.py
    - Trouvez `EMEASMSESSION` et copiez la valeur
 
 2. **Worker ID** : Trouvez votre ID dans l'URL de votre profil ADP
-   - Exemple : `https://mon.adp.com/.../workers/kfavry-jm3/...`
-   - L'ID est `kfavry-jm3`
+   - Exemple : `https://mon.adp.com/.../workers/VOTRE_ID/...`
+   - L'ID est la partie après `/workers/`
 
 ### 2. Import Manuel des Congés (depuis texte)
 
