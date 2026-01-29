@@ -14,9 +14,11 @@ from dotenv import load_dotenv
 # Le fichier .env contient toutes les configurations sensibles (tokens, horaires, etc.)
 # On cherche d'abord dans le dossier config/ (utilisé par Docker), sinon dans le dossier courant
 
-env_path = Path(__file__).parent / 'config' / '.env'  # Chemin pour Docker
+env_path = Path(__file__).parent.parent / 'config' / '.env'  # Chemin pour Docker: /app/config/.env
 if not env_path.exists():
-    env_path = Path('.env')  # Chemin pour exécution locale
+    env_path = Path('config/.env')  # Chemin pour exécution locale depuis la racine
+    if not env_path.exists():
+        env_path = Path('.env')  # Fallback: ancien emplacement
 load_dotenv(env_path)  # Charge les variables d'environnement depuis le fichier
 
 
