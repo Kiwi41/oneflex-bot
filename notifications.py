@@ -88,6 +88,41 @@ Vérifiez les logs pour plus de détails.
         if self.webhook_url:
             self._send_webhook(message, is_error=True)
     
+    def send_daily_reminder(self, bookings: list):
+        """Envoie un rappel matinal avec les détails des réservations du jour"""
+        if not bookings:
+            return
+        
+        today = datetime.now().strftime('%A %d/%m/%Y')
+        
+        # Traduire les moments
+        moment_fr = {
+            'MORNING': '🌅 Matin',
+            'AFTERNOON': '🌆 Après-midi',
+            'FULL_DAY': '🌞 Journée complète'
+        }
+        
+        bookings_text = ""
+        for booking in bookings:
+            desk_name = booking.get('desk', {}).get('name', 'Bureau inconnu')
+            space_name = booking.get('space', {}).get('inheritedName', '')
+            moment = moment_fr.get(booking.get('moment', ''), booking.get('moment', ''))
+            
+            bookings_text += f"\n  {moment}\n  📍 {desk_name}"
+            if space_name:
+                bookings_text += f" - {space_name}"
+        
+        message = f"""
+☀️ Bonjour ! Votre bureau aujourd'hui
+
+📅 {today}{bookings_text}
+
+Bonne journée ! 🎯
+"""
+        
+        if self.webhook_url:
+            self._send_webhook(message, is_success=True)
+    
     def _send_webhook(self, message: str, is_success: bool = False, is_error: bool = False):
         """Envoie une notification via webhook"""
         try:

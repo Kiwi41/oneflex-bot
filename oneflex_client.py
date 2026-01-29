@@ -576,6 +576,67 @@ class OneFlexClient:
         
         return None
     
+    def get_today_bookings(self) -> List[Dict]:
+        """
+        Récupère les réservations pour aujourd'hui uniquement
+        
+        Returns:
+            Liste des réservations du jour
+        """
+        from datetime import datetime
+        today = datetime.now().strftime('%Y-%m-%d')
+        
+        user_id = self.get_my_user_id()
+        if not user_id:
+            logger.error("❌ Impossible de récupérer l'ID utilisateur")
+            return []
+        
+        query = """
+        query affectationsByUserAndDates($userId: UserIdType!, $affectationsFilter: GetAffectationsFilter!) {
+            user(idV2: $userId) {
+                id
+                affectations(affectationFilter: $affectationsFilter) {
+                    id
+                    date
+                    moment
+                    active
+                    desk {
+                        id
+                        name
+                        coordinates
+                        __typename
+                    }
+                    space {
+                        id
+                        name
+                        inheritedName
+                        serviceType
+                        __typename
+                    }
+                    type
+                    description
+                    __typename
+                }
+                __typename
+            }
+        }
+        """
+        
+        variables = {
+            'userId': user_id,
+            'affectationsFilter': {
+                'dates': [today],
+                'withAuthoredSuggestions': True
+            }
+        }
+        
+        data = self._graphql_request(query, variables)
+        
+        if data and 'user' in data and 'affectations' in data['user']:
+            return data['user']['affectations']
+        
+        return []
+    
     def get_my_bookings(self, days: int = 30) -> List[Dict]:
         """
         Récupère les réservations (affectations) de l'utilisateur

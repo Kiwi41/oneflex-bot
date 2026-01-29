@@ -240,6 +240,22 @@ class OneFlexBot:
         
         return stats
     
+    def send_daily_reminder(self):
+        """Envoie un rappel avec les réservations du jour"""
+        if not self.connect():
+            logger.error("❌ Impossible de se connecter pour le rappel")
+            return
+        
+        bookings = self.client.get_today_bookings()
+        
+        if not bookings:
+            logger.info("ℹ️  Aucune réservation aujourd'hui")
+            return
+        
+        # Envoyer la notification avec les détails
+        notification_service.send_daily_reminder(bookings)
+        logger.info(f"📬 Rappel envoyé : {len(bookings)} réservation(s) aujourd'hui")
+    
     def show_my_bookings(self):
         """Affiche les réservations actuelles"""
         if not self.connect():
@@ -318,6 +334,14 @@ class OneFlexBot:
                     self.cancel_vacation_bookings()
                 
                 # Réserver pour les semaines à venir (en excluant les vacances)
+                self.book_recurring_days(Config.RECURRING_WEEKS)
+            
+            schedule.every().day.at(Config.RESERVATION_TIME).do(job)
+            
+            # Planifier le rappel matinal si configuré
+            if Config.REMINDER_TIME:
+                schedule.every().day.at(Config.REMINDER_TIME).do(self.send_daily_reminder)
+                logger.info(f"⏰ Rappel matinal configuré pour {Config.REMINDER_TIME}")
                 self.book_recurring_days(weeks_ahead=Config.RECURRING_WEEKS)
                 self.show_my_bookings()
             

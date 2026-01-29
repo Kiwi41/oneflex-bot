@@ -56,6 +56,11 @@ class Config:
     # Exemple: "03:05" = le bot s'exécutera chaque jour à 3h05 du matin
     RESERVATION_TIME = os.getenv('RESERVATION_TIME', '09:00')
     
+    # Heure du rappel matinal pour connaître sa place (format HH:MM)
+    # Exemple: "08:00" = le bot enverra un rappel à 8h les jours avec réservation
+    # Mettre vide "" pour désactiver les rappels
+    REMINDER_TIME = os.getenv('REMINDER_TIME', '')
+    
     # Nombre de jours à l'avance pour réserver (par défaut 7 jours)
     # Exemple: si RESERVATION_DAYS_AHEAD=28, réserve 28 jours à l'avance
     RESERVATION_DAYS_AHEAD = int(os.getenv('RESERVATION_DAYS_AHEAD', 7))
