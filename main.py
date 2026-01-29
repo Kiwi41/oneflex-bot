@@ -93,7 +93,7 @@ class OneFlexBot:
                 logger.info(f"📅 Date: {date.strftime('%d/%m/%Y')}")
                 
                 # Tenter la réservation
-                success = self.client.book_desk(
+                success, already_existed = self.client.book_desk(
                     desk_id=desk_id,
                     space_id=space_id,
                     date=date,
@@ -101,7 +101,7 @@ class OneFlexBot:
                 )
                 
                 if success:
-                    return True
+                    return (True, already_existed)
                 
                 # Si ce n'est pas le dernier bureau, continuer
                 if i < len(favorite_desks) - 1:
@@ -109,7 +109,7 @@ class OneFlexBot:
             
             # Aucun bureau n'est disponible
             logger.error(f"❌ Aucun de vos {len(favorite_desks)} bureau(x) favori(s) n'est disponible")
-            return False
+            return (False, False)
         else:
             desk_name = Config.DESK_NAME if hasattr(Config, 'DESK_NAME') else "Bureau"
         
@@ -117,14 +117,14 @@ class OneFlexBot:
         logger.info(f"📅 Date: {date.strftime('%d/%m/%Y')}")
         
         # Réserver le bureau
-        success = self.client.book_desk(
+        success, already_existed = self.client.book_desk(
             desk_id=desk_id,
             space_id=space_id,
             date=date,
             desk_name=desk_name
         )
         
-        return success
+        return (success, already_existed)
     
     def book_recurring_days(self, weeks_ahead: int = 4) -> dict:
         """
@@ -375,7 +375,16 @@ def main():
     # Si aucun argument, réserver pour demain
     if len(sys.argv) == 1:
         logger.info("🚀 Lancement du bot OneFlex")
-        bot.book_next_available()
+        result = bot.book_next_available()
+        
+        if isinstance(result, tuple):
+            success, already_existed = result
+            if success and not already_existed:
+                # Nouvelle réservation créée
+                from datetime import datetime, timedelta
+                date = (datetime.now() + timedelta(days=Config.RESERVATION_DAYS_AHEAD)).strftime('%d/%m/%Y')
+                notification_service.send_booking_success(1, 1, [date])
+        
         bot.show_my_bookings()
     
     # Mode planifié
@@ -420,7 +429,14 @@ def main():
                 bot.show_my_bookings()
                 return
             
-            bot.book_next_available(date=date)
+            result = bot.book_next_available(date=date)
+            
+            # Envoyer notification si nouvelle réservation
+            if isinstance(result, tuple):
+                success, already_existed = result
+                if success and not already_existed:
+                    notification_service.send_booking_success(1, 1, [date.strftime('%d/%m/%Y')])
+            
             bot.show_my_bookings()
         except ValueError:
             logger.error("❌ Format de date invalide. Utilisez YYYY-MM-DD")
@@ -429,7 +445,14 @@ def main():
     elif len(sys.argv) == 4 and sys.argv[1] == '--date' and sys.argv[3] == '--force':
         try:
             date = datetime.strptime(sys.argv[2], '%Y-%m-%d').date()
-            bot.book_next_available(date=date)
+            result = bot.book_next_available(date=date)
+            
+            # Envoyer notification si nouvelle réservation
+            if isinstance(result, tuple):
+                success, already_existed = result
+                if success and not already_existed:
+                    notification_service.send_booking_success(1, 1, [date.strftime('%d/%m/%Y')])
+            
             bot.show_my_bookings()
         except ValueError:
             logger.error("❌ Format de date invalide. Utilisez YYYY-MM-DD")
